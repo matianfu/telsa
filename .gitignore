@@ -59,3 +59,12 @@ typings/
 
 # next.js build output
 .next
+
+*.pem
+*.der
+*.key
+*.csr
+*.crt
+
+
+
