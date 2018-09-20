@@ -1,0 +1,26 @@
+{
+  "name": "telsa",
+  "version": "0.1.0",
+  "description": "tls 1.2 client for iot device with crypto authentication chip.",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wisnuc/telsa.git"
+  },
+  "keywords": [
+    "tls"
+  ],
+  "author": "matianfu@gmail.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wisnuc/telsa/issues"
+  },
+  "homepage": "https://github.com/wisnuc/telsa#readme"
+}
