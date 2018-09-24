@@ -2,11 +2,12 @@ const fs = require('fs')
 const TLS = require('.')
 
 const MQTT_PINGREQ = Buffer.from([12 << 4, 0])
-const MQTT_PINGRESP = Buffer.from([ 13 << 4, 0])
+const MQTT_PINGRESP = Buffer.from([13 << 4, 0])
 
 TLS.createConnection({
   port: 8883,
   host: 'a3dc7azfqxif0n.iot.cn-north-1.amazonaws.com.cn',
+  ca: fs.readFileSync('ca.pem').toString().replace(/\r\n/g, '\n'),
   // certs must be DER format
   clientCertificates: [
     Buffer.from(fs.readFileSync('deviceCert.crt')
