@@ -7,8 +7,9 @@ const MQTT_PINGRESP = Buffer.from([13 << 4, 0])
 TLS.createConnection({
   port: 8883,
   host: 'a3dc7azfqxif0n.iot.cn-north-1.amazonaws.com.cn',
+  // PEM format
   ca: fs.readFileSync('ca.pem').toString().replace(/\r\n/g, '\n'),
-  // certs must be DER format
+  // convert to DER format
   clientCertificates: [
     Buffer.from(fs.readFileSync('deviceCert.crt')
       .toString()
@@ -16,8 +17,9 @@ TLS.createConnection({
       .filter(x => !!x && !x.startsWith('--'))
       .join(''), 'base64')
   ],
-  // key is PEM format
+  // PEM format
   clientPrivateKey: fs.readFileSync('deviceCert.key')
+
 }, (err, tls) => {
   console.log('tls connected')
 
