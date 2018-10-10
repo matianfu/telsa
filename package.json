@@ -8,6 +8,7 @@
     "test": "test"
   },
   "scripts": {
+    "doc": "node_modules/.bin/jsdoc lib/tls.js -d ./docs -r ./docs/readme.md",
     "test": "test"
   },
   "repository": {
