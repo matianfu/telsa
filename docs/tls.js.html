@@ -1,4 +1,32 @@
-const path = require('path')
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: tls.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: tls.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const path = require('path')
 const fs = require('fs')
 const child = require('child_process')
 const { Duplex } = require('stream')
@@ -94,7 +122,7 @@ const DECIPHER = (algorithm, key, data) => {
 const PRF256 = (secret, label, seed, length) => {
   seed = Buffer.concat([Buffer.from(label, 'binary'), seed])
   let P_HASH = Buffer.alloc(0)
-  for (let A = Buffer.from(seed); P_HASH.length < length;
+  for (let A = Buffer.from(seed); P_HASH.length &lt; length;
     A = HMAC256(secret, A),
     P_HASH = Buffer.concat([P_HASH, HMAC256(secret, Buffer.concat([A, seed]))])) {}
   return P_HASH.slice(0, length)
@@ -132,7 +160,7 @@ const createDecipher = (key, macKey) => {
   return (type, data) => {
     let dec = DECIPHER('aes-128-cbc', key, data)
     let len = dec[dec.length - 1] + 1
-    if (dec.length < len) throw new Error('bad padding')
+    if (dec.length &lt; len) throw new Error('bad padding')
     let pad = dec.slice(dec.length - len)
     if (!pad.equals(Buffer.alloc(len, len - 1))) throw new Error('bad padding')
     data = dec.slice(0, dec.length - len - 20)
@@ -155,7 +183,7 @@ class State {
     let p
     for (p = Object.getPrototypeOf(this);
       !(NextState.prototype instanceof p.constructor);
-      p.hasOwnProperty('exit') && p.exit.apply(this),
+      p.hasOwnProperty('exit') &amp;&amp; p.exit.apply(this),
       p = Object.getPrototypeOf(p));
 
     this.ctx.state = new NextState(this, ...args)
@@ -163,7 +191,7 @@ class State {
     let qs = []
     for (let q = NextState.prototype;
       q !== p;
-      q.hasOwnProperty('enter') && qs.unshift(q),
+      q.hasOwnProperty('enter') &amp;&amp; qs.unshift(q),
       q = Object.getPrototypeOf(q));
 
     qs.forEach(q => q.enter.apply(this.ctx.state))
@@ -175,7 +203,7 @@ class State {
     let qs = []
     for (let q = InitState.prototype;
       q !== State.prototype;
-      q.hasOwnProperty('enter') && qs.unshift(q),
+      q.hasOwnProperty('enter') &amp;&amp; qs.unshift(q),
       q = Object.getPrototypeOf(q));
 
     qs.forEach(q => q.enter.apply(ctx.state))
@@ -236,7 +264,7 @@ class HandshakeState extends State {
           this.clientWriteKey = keys.slice(40, 56)
           this.serverWriteKey = keys.slice(56, 72)
           this.iv = Array.from(keys.slice(72)).reduce((sum, c, i) =>
-            (sum + BigInt(c) << (BigInt(8) * BigInt(i))), BigInt(0))
+            (sum + BigInt(c) &lt;&lt; (BigInt(8) * BigInt(i))), BigInt(0))
         },
         clientVerifyData () {
           return PRF256(this.masterSecret, 'client finished', this.digest(), 12)
@@ -315,12 +343,12 @@ class ServerHello extends HandshakeState {
 class ServerCertificate extends HandshakeState {
   handleCertificate (data) {
     const shift = size => K(data.slice(0, size))(data = data.slice(size))
-    if (data.length < 3 ||
+    if (data.length &lt; 3 ||
       readUInt24(shift(3)) !== data.length) throw new Error('invalid message length')
 
     this.hs.serverCertificates = []
     while (data.length) {
-      if (data.length < 3 ||
+      if (data.length &lt; 3 ||
         readUInt24(data) + 3 > data.length) throw new Error('invalid cert length')
       this.hs.serverCertificates.push(shift(readUInt24(shift(3))))
     }
@@ -338,10 +366,10 @@ class CertificateRequest extends HandshakeState {
   handleCertificateRequest (data) {
     const shift = size => K(data.slice(0, size))(data = data.slice(size))
 
-    if (data.length < 1 || data[0] + 1 > data.length) throw new Error('invalid length')
+    if (data.length &lt; 1 || data[0] + 1 > data.length) throw new Error('invalid length')
     this.hs.certificateTypes = Array.from(shift(shift(1)[0]))
 
-    if (data.length < 2 || data.readUInt16BE() % 2 ||
+    if (data.length &lt; 2 || data.readUInt16BE() % 2 ||
       data.readUInt16BE() + 2 > data.length) throw new Error('invalid length')
     this.hs.signatureAlgorithms = Array
       .from(shift(shift(2).readUInt16BE()))
@@ -477,14 +505,14 @@ class TLS extends Duplex {
           this.state.handleChangeCipherSpec(shift(1))
           break
         case ALERT:
-          if (this.fragment.length < 2) return
+          if (this.fragment.length &lt; 2) return
           this.state.handleAlert(shift(2))
           break
         case HANDSHAKE:
-          if (this.fragment.length < 4) return
-          // let length = this.fragment.readUInt32BE() & 0xffffff
+          if (this.fragment.length &lt; 4) return
+          // let length = this.fragment.readUInt32BE() &amp; 0xffffff
           let length = readUInt24(this.fragment.slice(1))
-          if (this.fragment.length < 4 + length) return
+          if (this.fragment.length &lt; 4 + length) return
           this.state.handleHandshake(shift(4 + length))
           break
         case APPLICATION_DATA:
@@ -501,11 +529,11 @@ class TLS extends Duplex {
     this.data = Buffer.concat([this.data, data])
     while (this.data.length >= 5) {
       let type = this.data[0]
-      if (type < 20 || type > 23) throw new Error('unknown content type')
+      if (type &lt; 20 || type > 23) throw new Error('unknown content type')
       let version = this.data.readUInt16BE(1)
       if (version !== 0x0303) throw new Error('unsupported protocol version')
       let length = this.data.readUInt16BE(3)
-      if (this.data.length < 5 + length) break
+      if (this.data.length &lt; 5 + length) break
       let fragment = this.data.slice(5, 5 + length)
       this.data = this.data.slice(5 + length)
       if (this.decipher) fragment = this.decipher(type, fragment)
@@ -527,7 +555,7 @@ class TLS extends Duplex {
     pems.reverse()
     pems.unshift(ca)
     let bundle = pems.join('\n')
-    let cmd = `openssl verify -CAfile <(echo -e \"${bundle}\")`
+    let cmd = `openssl verify -CAfile &lt;(echo -e \"${bundle}\")`
     let openssl = child.exec(cmd, { shell: '/bin/bash' }, (err, stdout) => {
       console.log(err, stdout)
       this.state.serverCertificatesVerified()
@@ -605,3 +633,26 @@ class TLS extends Duplex {
 }
 
 module.exports = TLS
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#CHANGE_CIPHER_SPEC">CHANGE_CIPHER_SPEC</a></li><li><a href="global.html#CLOSE_NOTIFY">CLOSE_NOTIFY</a></li><li><a href="global.html#HELLO_REQUEST">HELLO_REQUEST</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Oct 10 2018 07:56:49 GMT+0000 (Coordinated Universal Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
