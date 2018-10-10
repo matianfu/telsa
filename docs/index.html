@@ -43,7 +43,57 @@
 
 
     <section>
-        <article><p>hello TLS</p></article>
+        <article><h1>Harel State Machine</h1><p>This module is implemented using state machine pattern. However, it is not a flat state machine, but a Harel state machine.</p>
+<p>In Harel machine, common properties and behaviors among states are abstracted to a super state, which transforming a flat state space into a hierarchy.</p>
+<p>At any time, the object must reside in a leaf-node state, which may be refered as a concrete state. Super state abstraction provides convenience for understanding and implementation, but the object cannot reside in a super state.</p>
+<h1>Design Pattern</h1><p>The context and state are split into different classes, as most state machine patterns do. However, the implementation of <code>setState</code> is something tricky for Harel state machine.</p>
+<p>A real benefit of Harel machine is that the <code>enter</code> and <code>exit</code> logic are distributed in the several states along the node path, including the concrete state and its super states.</p>
+<p>When transitting from concrete state S1 to S2, S1's exit are executed first, then it's parent state's exit method, until the common ancestor state S of S1 and S2 reached. Since S is the common ancester, there is no need to execute its exit or enter method, as well as all its ancestor's exit or enter method. At this point, the execution walks down the path towards the S2 state. For each states along the path, the enter method is executed.</p>
+<p>The code is shown below.</p>
+<pre class="prettyprint source lang-js"><code>setState (NextState, ...args) {
+  let p
+  for (p = Object.getPrototypeOf(this);
+    !(NextState.prototype instanceof p.constructor);
+    p.hasOwnProperty('exit') && p.exit.apply(this),
+    p = Object.getPrototypeOf(p));
+
+  this.ctx.state = new NextState(this, ...args)
+
+  let qs = []
+  for (let q = NextState.prototype;
+    q !== p;
+    q.hasOwnProperty('enter') && qs.unshift(q),
+    q = Object.getPrototypeOf(q));
+
+  qs.forEach(q => q.enter.apply(this.ctx.state))
+}</code></pre><p>The Harel machine hierarchy are encoded using JavaScript class hierarchy. The only way to walk in the hierarchical tree is to retrieve the prototype object of the class constructor and get its prototype through <code>Object.getPrototypeOf()</code> method. This is an unusual way in JavaScript but makes sense here.</p>
+<p>Also, since the <code>enter</code> and <code>exit</code> are called by forcefully binding <code>this</code> using JavaScript function's <code>apply</code> method, the inheritance or overriding feature of these two methods should be avoided.</p>
+<h1>Init State</h1><p>At first thought, the <code>setState</code> method is a class method. So it cannot be used to create the first state in context object's constructor.</p>
+<p>However, unlike Java or C++, JavaScript is a late-binding language. In <code>setState</code>, this is just a previous state. If the previous state is null, we can skip the execution of <code>exit</code> methods and create the next state directly. Although it sounds weird to bind a null object to a class method as <code>this</code>, it works and conforms to the JavaScript object model perfectly.</p>
+<p>In real code, the context object is a mandatory parameter for constructing a state object, so we use it as the faked <code>this</code> and apply the <code>setState</code> method on it. Then the code can check its type to determine if it's constructing the first state. Meanwhile, passing <code>null</code> as <code>NextState</code> is also allowed, which means the last state destroyed.</p>
+<pre class="prettyprint source lang-js"><code>setState (NextState, ...args) {
+  let p
+  let qs = []
+
+  if (this instanceof State) {
+    for (p = Object.getPrototypeOf(this);
+      !(NextState.prototype instanceof p.constructor);
+      p.hasOwnProperty('exit') && p.exit.apply(this),
+      p = Object.getPrototypeOf(p));
+  }
+
+  if (NextState) {
+    let ctx = this instanceof State ? this.ctx : this
+    this.ctx.state = new NextState(ctx, ...args)
+    for (let q = NextState.prototype;
+      q !== p;
+      q.hasOwnProperty('enter') && qs.unshift(q),
+      q = Object.getPrototypeOf(q));
+
+    qs.forEach(q => q.enter.apply(this.ctx.state))
+  }
+}</code></pre><p>Then, in the constructor of context class, the first state can be constructed by:</p>
+<pre class="prettyprint source lang-js"><code>State.setState.apply(this, ServerHello)</code></pre><p>This avoids adding a <code>static</code> method to init the first state. After all, JavaScript is a dynamic, late-binding language and nothing should be static.</p></article>
     </section>
 
 
@@ -54,13 +104,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="CertificateRequest.html">CertificateRequest</a></li><li><a href="CertificateVerify.html">CertificateVerify</a></li><li><a href="Established.html">Established</a></li><li><a href="HandshakeState.html">HandshakeState</a></li><li><a href="ServerCertificate.html">ServerCertificate</a></li><li><a href="ServerHello.html">ServerHello</a></li><li><a href="ServerHelloDone.html">ServerHelloDone</a></li><li><a href="State.html">State</a></li><li><a href="TLS.html">TLS</a></li><li><a href="VerifyServerCertificate.html">VerifyServerCertificate</a></li></ul><h3>Global</h3><ul><li><a href="global.html#AES_128_CBC_SHA">AES_128_CBC_SHA</a></li><li><a href="global.html#AlertDescription">AlertDescription</a></li><li><a href="global.html#ContentType">ContentType</a></li><li><a href="global.html#createCipher">createCipher</a></li><li><a href="global.html#createDecipher">createDecipher</a></li><li><a href="global.html#createSequenceNumber">createSequenceNumber</a></li><li><a href="global.html#HMAC1">HMAC1</a></li><li><a href="global.html#HMAC256">HMAC256</a></li><li><a href="global.html#HT">HT</a></li><li><a href="global.html#K-Kcombinator">K - K combinator</a></li><li><a href="global.html#Prepend8">Prepend8</a></li><li><a href="global.html#Prepend16">Prepend16</a></li><li><a href="global.html#Prepend24">Prepend24</a></li><li><a href="global.html#PRF256">PRF256</a></li><li><a href="global.html#randomBuffer">randomBuffer</a></li><li><a href="global.html#readUInt24">readUInt24</a></li><li><a href="global.html#RSA_PKCS1_PADDING">RSA_PKCS1_PADDING</a></li><li><a href="global.html#RSA_PKCS1_SHA256">RSA_PKCS1_SHA256</a></li><li><a href="global.html#SHA256">SHA256</a></li><li><a href="global.html#TLSVersion">TLSVersion</a></li><li><a href="global.html#UInt8">UInt8</a></li><li><a href="global.html#UInt16">UInt16</a></li><li><a href="global.html#UInt24">UInt24</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="CertificateRequest.html">CertificateRequest</a></li><li><a href="CertificateVerify.html">CertificateVerify</a></li><li><a href="ChangeCipherSpec.html">ChangeCipherSpec</a></li><li><a href="Established.html">Established</a></li><li><a href="HandshakeState.html">HandshakeState</a></li><li><a href="ServerCertificate.html">ServerCertificate</a></li><li><a href="ServerFinished.html">ServerFinished</a></li><li><a href="ServerHello.html">ServerHello</a></li><li><a href="ServerHelloDone.html">ServerHelloDone</a></li><li><a href="State.html">State</a></li><li><a href="TLS.html">TLS</a></li><li><a href="VerifyServerCertificate.html">VerifyServerCertificate</a></li></ul><h3>Global</h3><ul><li><a href="global.html#AES_128_CBC_SHA">AES_128_CBC_SHA</a></li><li><a href="global.html#AlertDescription">AlertDescription</a></li><li><a href="global.html#ContentType">ContentType</a></li><li><a href="global.html#createCipher">createCipher</a></li><li><a href="global.html#createDecipher">createDecipher</a></li><li><a href="global.html#createSequenceNumber">createSequenceNumber</a></li><li><a href="global.html#HMAC1">HMAC1</a></li><li><a href="global.html#HMAC256">HMAC256</a></li><li><a href="global.html#HT">HT</a></li><li><a href="global.html#K-Kcombinator">K - K combinator</a></li><li><a href="global.html#Prepend8">Prepend8</a></li><li><a href="global.html#Prepend16">Prepend16</a></li><li><a href="global.html#Prepend24">Prepend24</a></li><li><a href="global.html#PRF256">PRF256</a></li><li><a href="global.html#randomBuffer">randomBuffer</a></li><li><a href="global.html#readUInt24">readUInt24</a></li><li><a href="global.html#RSA_PKCS1_PADDING">RSA_PKCS1_PADDING</a></li><li><a href="global.html#RSA_PKCS1_SHA256">RSA_PKCS1_SHA256</a></li><li><a href="global.html#SHA256">SHA256</a></li><li><a href="global.html#TLSVersion">TLSVersion</a></li><li><a href="global.html#UInt8">UInt8</a></li><li><a href="global.html#UInt16">UInt16</a></li><li><a href="global.html#UInt24">UInt24</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Oct 10 2018 12:36:15 GMT+0000 (Coordinated Universal Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Oct 10 2018 17:43:37 GMT+0000 (Coordinated Universal Time)
 </footer>
 
 <script> prettyPrint(); </script>
