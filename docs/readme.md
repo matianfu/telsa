@@ -2,12 +2,74 @@
 
 This module is implemented using state machine pattern. However, it is not a flat state machine, but a Harel state machine.
 
-In Harel machine, common properties and behaviors among states are abstracted to a super state, which transforming a flat state space into a hierarchy.
+In Harel machine, common properties and behaviors among concrete states are further abstracted to super states, transforming a flat state space into a hierarchical structure.
 
-At any time, the object must reside in a leaf-node state, which may be refered as a concrete state. Super state abstraction provides convenience for understanding and implementation, but the object cannot reside in a super state.
+Super state is not a composition of parallel or concurrent state machines. It is merely an abstraction, providing a structured state space for better understanding and easier manipulation.
 
 # Design Pattern
 
+## Flat State Machine
+
+Let's start with a flat machine. 
+
+In classical state pattern, context and states are implemented by separate classes. All state-specific resources are maintained in state class. The context class simply forwards all external requests to state class.
+
+Each state class has `enter` and `exit` methods for constructing and destructing state-specific resources/behaviors respectively. This is a powerful way to ensure the allocation and deallocation of resources, as well as starting and stoping actions, possibly asynchronous and concurrent, to happen at the right time and place.
+
+The iconic method of state class is the `setState` method. It destructs the current state by calling `exit` method, constructs the new state, and calls its `enter` method.
+
+```js
+class State {
+  constructor (ctx) {
+    this.ctx = ctx
+  }
+
+  enter () {}
+  exit () {}
+
+  setState (NextState, ...args) {
+    this.exit()
+    this.ctx.state = new NextState(this.ctx, ...args)
+    this.ctx.state.enter()
+  }
+}
+
+class ConcreteState extends State {
+  constructor (ctx, ...args) {
+    super(ctx)
+  }
+}
+
+class Context {
+  constructor () {
+    this.state = new ConcreteState(this)
+    this.state.enter()
+  }
+}
+```
+
+The first parameter of the `setState` method is a state class constructor. 
+
+In JavaScript, a class is modeled as a pair `(c, p)`, where c is the constructor function and p is a plain object. There are built-in, mutual references between c and p. That is:
+
+```
+1. c.prototype is p
+2. p.constructor is c
+```
+
+This can be verified in a node REPL:
+
+```
+> class A {}
+undefined
+> A.prototype.constructor === A
+true
+```
+
+So either c or p can be used to identify a class. c is more convenient for it is a global name.
+
+
+ 
 The context and state are split into different classes, as most state machine patterns do. However, the implementation of `setState` is something tricky for Harel state machine.
 
 A real benefit of Harel machine is that the `enter` and `exit` logic are distributed in the several states along the node path, including the concrete state and its super states.
@@ -79,6 +141,8 @@ Then, in the constructor of context class, the first state can be constructed by
 State.setState.apply(this, ServerHello)
 ```
 
-This avoids adding a `static` method to init the first state. After all, JavaScript is a dynamic, late-binding language and nothing should be static.
+This avoids adding a `static` method to init the first state. After all, JavaScript is a dynamic, late-binding language and nothing should be static (the static keyword of ES6 class is an unfortunate mistake).
+
+
 
 
