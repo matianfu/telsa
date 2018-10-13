@@ -1,6 +1,6 @@
 {
   "name": "telsa",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "tls 1.2 client for iot device with crypto authentication chip.",
   "main": "index.js",
   "directories": {
