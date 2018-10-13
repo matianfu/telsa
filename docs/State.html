@@ -28,9 +28,9 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>State<span class="signature">(ctx)</span><span class="type-signature"></span></h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>State<span class="signature">(soc)</span><span class="type-signature"></span></h2>
         
-            <div class="class-description">base state class for TLS state machine</div>
+            <div class="class-description">base state class</div>
         
     
 </header>
@@ -45,7 +45,7 @@
     
 
     
-    <h4 class="name" id="State"><span class="type-signature"></span>new State<span class="signature">(ctx)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="State"><span class="type-signature"></span>new State<span class="signature">(soc)</span><span class="type-signature"></span></h4>
     
 
     
@@ -53,7 +53,7 @@
 
 
 <div class="description">
-    construct a new state from either previous state or the TLS context (initial state)
+    construct a new state from either previous state or the TLS context
 </div>
 
 
@@ -89,7 +89,7 @@
 
         <tr>
             
-                <td class="name"><code>ctx</code></td>
+                <td class="name"><code>soc</code></td>
             
 
             <td class="type">
@@ -98,7 +98,7 @@
 <span class="param-type"><a href="State.html">State</a></span>
 |
 
-<span class="param-type"><a href="TLS.html">TLS</a></span>
+<span class="param-type"><a href="Context.html">Context</a></span>
 
 
             
@@ -149,7 +149,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="tls.js.html">tls.js</a>, <a href="tls.js.html#line286">line 286</a>
+        <a href="tls.js.html">tls.js</a>, <a href="tls.js.html#line285">line 285</a>
     </li></ul></dd>
     
 
@@ -196,92 +196,6 @@
 
     
         <h3 class="subsection-title">Methods</h3>
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="exit"><span class="type-signature"></span>exit<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    virtual
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="tls.js.html">tls.js</a>, <a href="tls.js.html#line298">line 298</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         
             
@@ -433,165 +347,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="tls.js.html">tls.js</a>, <a href="tls.js.html#line305">line 305</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="write"><span class="type-signature"></span>write<span class="signature">(type, data)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    write data
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>type</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="global.html#ContentType">ContentType</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>data</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">buffer</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="tls.js.html">tls.js</a>, <a href="tls.js.html#line340">line 340</a>
+        <a href="tls.js.html">tls.js</a>, <a href="tls.js.html#line299">line 299</a>
     </li></ul></dd>
     
 
@@ -635,13 +391,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="CertificateRequest.html">CertificateRequest</a></li><li><a href="CertificateVerify.html">CertificateVerify</a></li><li><a href="ChangeCipherSpec.html">ChangeCipherSpec</a></li><li><a href="Established.html">Established</a></li><li><a href="HandshakeState.html">HandshakeState</a></li><li><a href="ServerCertificate.html">ServerCertificate</a></li><li><a href="ServerFinished.html">ServerFinished</a></li><li><a href="ServerHello.html">ServerHello</a></li><li><a href="ServerHelloDone.html">ServerHelloDone</a></li><li><a href="State.html">State</a></li><li><a href="TLS.html">TLS</a></li><li><a href="VerifyServerCertificate.html">VerifyServerCertificate</a></li></ul><h3>Global</h3><ul><li><a href="global.html#AES_128_CBC_SHA">AES_128_CBC_SHA</a></li><li><a href="global.html#AlertDescription">AlertDescription</a></li><li><a href="global.html#ContentType">ContentType</a></li><li><a href="global.html#createCipher">createCipher</a></li><li><a href="global.html#createDecipher">createDecipher</a></li><li><a href="global.html#createSequenceNumber">createSequenceNumber</a></li><li><a href="global.html#HMAC1">HMAC1</a></li><li><a href="global.html#HMAC256">HMAC256</a></li><li><a href="global.html#HT">HT</a></li><li><a href="global.html#K-Kcombinator">K - K combinator</a></li><li><a href="global.html#Prepend8">Prepend8</a></li><li><a href="global.html#Prepend16">Prepend16</a></li><li><a href="global.html#Prepend24">Prepend24</a></li><li><a href="global.html#PRF256">PRF256</a></li><li><a href="global.html#randomBuffer">randomBuffer</a></li><li><a href="global.html#readUInt24">readUInt24</a></li><li><a href="global.html#RSA_PKCS1_PADDING">RSA_PKCS1_PADDING</a></li><li><a href="global.html#RSA_PKCS1_SHA256">RSA_PKCS1_SHA256</a></li><li><a href="global.html#SHA256">SHA256</a></li><li><a href="global.html#TLSVersion">TLSVersion</a></li><li><a href="global.html#UInt8">UInt8</a></li><li><a href="global.html#UInt16">UInt16</a></li><li><a href="global.html#UInt24">UInt24</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="CertificateRequest.html">CertificateRequest</a></li><li><a href="CertificateVerify.html">CertificateVerify</a></li><li><a href="ChangeCipherSpec.html">ChangeCipherSpec</a></li><li><a href="Context.html">Context</a></li><li><a href="Established.html">Established</a></li><li><a href="FinalState.html">FinalState</a></li><li><a href="HandshakeContext.html">HandshakeContext</a></li><li><a href="HandshakeState.html">HandshakeState</a></li><li><a href="InitState.html">InitState</a></li><li><a href="RecordProtocol.html">RecordProtocol</a></li><li><a href="ServerCertificate.html">ServerCertificate</a></li><li><a href="ServerFinished.html">ServerFinished</a></li><li><a href="ServerHello.html">ServerHello</a></li><li><a href="ServerHelloDone.html">ServerHelloDone</a></li><li><a href="SocketReady.html">SocketReady</a></li><li><a href="State.html">State</a></li><li><a href="VerifyServerCertificate.html">VerifyServerCertificate</a></li></ul><h3>Global</h3><ul><li><a href="global.html#AES_128_CBC_SHA">AES_128_CBC_SHA</a></li><li><a href="global.html#AlertDescription">AlertDescription</a></li><li><a href="global.html#ContentType">ContentType</a></li><li><a href="global.html#createCipher">createCipher</a></li><li><a href="global.html#createDecipher">createDecipher</a></li><li><a href="global.html#createSequenceNumber">createSequenceNumber</a></li><li><a href="global.html#HandshakeType">HandshakeType</a></li><li><a href="global.html#HMAC1">HMAC1</a></li><li><a href="global.html#HMAC256">HMAC256</a></li><li><a href="global.html#K">K</a></li><li><a href="global.html#Prepend8">Prepend8</a></li><li><a href="global.html#Prepend16">Prepend16</a></li><li><a href="global.html#Prepend24">Prepend24</a></li><li><a href="global.html#PRF256">PRF256</a></li><li><a href="global.html#randomBuffer">randomBuffer</a></li><li><a href="global.html#readUInt24">readUInt24</a></li><li><a href="global.html#RSA_PKCS1_PADDING">RSA_PKCS1_PADDING</a></li><li><a href="global.html#RSA_PKCS1_SHA256">RSA_PKCS1_SHA256</a></li><li><a href="global.html#SHA256">SHA256</a></li><li><a href="global.html#UInt8">UInt8</a></li><li><a href="global.html#UInt16">UInt16</a></li><li><a href="global.html#UInt24">UInt24</a></li><li><a href="global.html#VER12">VER12</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Oct 11 2018 15:09:41 GMT+0000 (Coordinated Universal Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Oct 13 2018 18:15:07 GMT+0000 (Coordinated Universal Time)
 </footer>
 
 <script> prettyPrint(); </script>
