@@ -342,9 +342,6 @@ class State {
       let ctx = this instanceof State ? this.ctx : this
       let nextState = new NextState(this, ...args)
       ctx.state = nextState
-
-      console.log('- entering ' + nextState.constructor.name)
-
       for (let q = NextState.prototype; q !== p;
         q.hasOwnProperty('enter') &amp;&amp; qs.unshift(q),
         q = Object.getPrototypeOf(q));
@@ -352,17 +349,31 @@ class State {
       qs.forEach(q => q.enter.apply(ctx.state))
     }
   }
+
+  _destroy (err, callback) {
+    let err = new Error('destroyed')
+    err.code = 'EDESTROY'
+    this.setState(FinalState, err)
+  }
 }
 
 /** init state */
 class InitState extends State {
   connect (port, host) {
-    if (this.socket) return
+    this.setState(SocketConnecting, port, host)
+  }
+}
+
+/** socket connecting */
+class SocketConnecting extends State {
+  constructor (soc, port, host) {
+    super(soc) 
     let socket = new net.Socket()
     socket.on('error', err => this.setState(FinalState, err))
     socket.connect(port, host, () => {
-      this.socket = null
-      this.setState(ServerHello, socket)
+      delete this.socket
+      socket.removeAllListeners() 
+      this.setState(ServerHello, socket) 
     })
     this.socket = socket
   }
@@ -370,10 +381,35 @@ class InitState extends State {
   exit () {
     if (this.socket) {
       this.socket.removeAllListeners()
-      this.socket.on('error', () => {})
-      this.socket.destroy()
-      this.socket = null
+        .on('error', () => {})
+        .end()
+      delete this.socket
     }
+  }
+}
+
+/** socket connected */
+class SocketConnected extends State {
+  constructor (soc, socket) {
+    super(soc)
+    this.rp = soc instanceof SocketConnected ? soc.rp : new RecordProtocol(socket)
+    this.rp.state = this
+  }
+
+  exit () {
+    this.rp.exit()
+  }
+}
+
+/** final state */
+class FinalState extends State {
+  constructor (soc, err) {
+    super(soc)
+    this.err = err
+  }
+
+  _write (chunk, encoding, callback) {
+    // TODO
   }
 }
 
@@ -387,9 +423,9 @@ class RecordProtocol {
     this.cipher = null
     this.decipher = null
 
-    // TODO socket close ???
-
-    socket.on('error', err => this.state.setState(FinalState, err))
+    // socket.on('close', () => this.state.
+    // socket.on('error', err => this.state.setState(FinalState, err))
+    socket.on('error', err => this.state.onSocketError(err))
     socket.on('data', data => {
       try {
         this.onData(data)
@@ -479,31 +515,6 @@ class RecordProtocol {
   }
 }
 
-/** socket ready */
-class SocketReady extends State {
-  constructor (soc, socket) {
-    super(soc)
-    this.rp = soc instanceof SocketReady ? soc.rp : new RecordProtocol(socket)
-    this.rp.state = this
-  }
-
-  exit () {
-    this.rp.exit()
-  }
-}
-
-/** final state */
-class FinalState extends State {
-  constructor (soc, err) {
-    super(soc)
-    this.err = err
-  }
-
-  _write (_, __, callback) {
-    // calblack(this.err)
-  }
-}
-
 /** handshake state context **/
 class HandshakeContext {
   constructor () {
@@ -553,7 +564,7 @@ class HandshakeContext {
 /**
 A super-state for all handshake states
 */
-class HandshakeState extends SocketReady {
+class HandshakeState extends SocketConnected {
   constructor (soc, ...args) {
     super(soc, ...args)
     this.hs = soc instanceof HandshakeState ? soc.hs : new HandshakeContext()
@@ -742,7 +753,7 @@ class ServerFinished extends HandshakeState {
 /**
 connection established
 */
-class Established extends SocketReady {
+class Established extends SocketConnected {
   enter () {
     this.ctx.emit('connect')
   }
@@ -758,30 +769,76 @@ class Established extends SocketReady {
 
 /**
 context class of TLS state machine
+
+The spec of a TLS connection
+
+stage description 
+1     constructed
+2
+3
+
 */
 class Context extends Duplex {
   constructor (opts) {
     super(opts)
+
+    /**
+    @member {Object}
+    */
     this.opts = opts
+
+    /**
+    string as enumeration, 'unconnected', 'connecting', 'connected', 'closed'
+    @member {string}
+    */
+    this.connection = 'unconnected'
+
+    this.on('connect', () => {
+      this.connected = true
+      if (this.deferred) {
+        let { chunk, encoding, callback } = this.deferred
+        this.deferred = null
+        this.state._write(chunk, encoding, callback)
+      }
+    })
     State.prototype.setState.apply(this, [InitState])
   }
 
   /**
-  implement duplex write
+  implement duplex _write
   */
-  _write (...args) {
-    this.state._write(...args)
+  _write (chunk, encoding, callback) {
+    if (this.connected) {
+      this.state._write(chunk, encoding, callback)
+    } else if (this.deferred) {
+      callback(new Error('pending write exists'))
+    } else {
+      this.deferred = { chunk, encoding, callback }
+    }
   }
 
   /**
-  implement duplex read
+  implement duplex _final
+  */
+  _final (callback) {
+    this.state._final(callback)
+  }
+
+  /**
+  implement duplex _destroy
+  */
+  _destroy (err, callback) {
+    this.state._destroy (err, callback)
+  }
+
+  /**
+  implement duplex _read
   */
   _read (size) {
     // this.state._read(size)
   }
 
   /**
-
   */
   connect (port, host, listener) {
     this.state.connect(port, host)
@@ -800,13 +857,13 @@ module.exports = Context
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="CertificateRequest.html">CertificateRequest</a></li><li><a href="CertificateVerify.html">CertificateVerify</a></li><li><a href="ChangeCipherSpec.html">ChangeCipherSpec</a></li><li><a href="Context.html">Context</a></li><li><a href="Established.html">Established</a></li><li><a href="FinalState.html">FinalState</a></li><li><a href="HandshakeContext.html">HandshakeContext</a></li><li><a href="HandshakeState.html">HandshakeState</a></li><li><a href="InitState.html">InitState</a></li><li><a href="RecordProtocol.html">RecordProtocol</a></li><li><a href="ServerCertificate.html">ServerCertificate</a></li><li><a href="ServerFinished.html">ServerFinished</a></li><li><a href="ServerHello.html">ServerHello</a></li><li><a href="ServerHelloDone.html">ServerHelloDone</a></li><li><a href="SocketReady.html">SocketReady</a></li><li><a href="State.html">State</a></li><li><a href="VerifyServerCertificate.html">VerifyServerCertificate</a></li></ul><h3>Global</h3><ul><li><a href="global.html#AES_128_CBC_SHA">AES_128_CBC_SHA</a></li><li><a href="global.html#AlertDescription">AlertDescription</a></li><li><a href="global.html#ContentType">ContentType</a></li><li><a href="global.html#createCipher">createCipher</a></li><li><a href="global.html#createDecipher">createDecipher</a></li><li><a href="global.html#createSequenceNumber">createSequenceNumber</a></li><li><a href="global.html#HandshakeType">HandshakeType</a></li><li><a href="global.html#HMAC1">HMAC1</a></li><li><a href="global.html#HMAC256">HMAC256</a></li><li><a href="global.html#K">K</a></li><li><a href="global.html#Prepend8">Prepend8</a></li><li><a href="global.html#Prepend16">Prepend16</a></li><li><a href="global.html#Prepend24">Prepend24</a></li><li><a href="global.html#PRF256">PRF256</a></li><li><a href="global.html#randomBuffer">randomBuffer</a></li><li><a href="global.html#readUInt24">readUInt24</a></li><li><a href="global.html#RSA_PKCS1_PADDING">RSA_PKCS1_PADDING</a></li><li><a href="global.html#RSA_PKCS1_SHA256">RSA_PKCS1_SHA256</a></li><li><a href="global.html#SHA256">SHA256</a></li><li><a href="global.html#UInt8">UInt8</a></li><li><a href="global.html#UInt16">UInt16</a></li><li><a href="global.html#UInt24">UInt24</a></li><li><a href="global.html#VER12">VER12</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="CertificateRequest.html">CertificateRequest</a></li><li><a href="CertificateVerify.html">CertificateVerify</a></li><li><a href="ChangeCipherSpec.html">ChangeCipherSpec</a></li><li><a href="Context.html">Context</a></li><li><a href="Established.html">Established</a></li><li><a href="FinalState.html">FinalState</a></li><li><a href="HandshakeContext.html">HandshakeContext</a></li><li><a href="HandshakeState.html">HandshakeState</a></li><li><a href="InitState.html">InitState</a></li><li><a href="RecordProtocol.html">RecordProtocol</a></li><li><a href="ServerCertificate.html">ServerCertificate</a></li><li><a href="ServerFinished.html">ServerFinished</a></li><li><a href="ServerHello.html">ServerHello</a></li><li><a href="ServerHelloDone.html">ServerHelloDone</a></li><li><a href="SocketConnected.html">SocketConnected</a></li><li><a href="SocketConnecting.html">SocketConnecting</a></li><li><a href="State.html">State</a></li><li><a href="VerifyServerCertificate.html">VerifyServerCertificate</a></li></ul><h3>Global</h3><ul><li><a href="global.html#AES_128_CBC_SHA">AES_128_CBC_SHA</a></li><li><a href="global.html#AlertDescription">AlertDescription</a></li><li><a href="global.html#ContentType">ContentType</a></li><li><a href="global.html#createCipher">createCipher</a></li><li><a href="global.html#createDecipher">createDecipher</a></li><li><a href="global.html#createSequenceNumber">createSequenceNumber</a></li><li><a href="global.html#HandshakeType">HandshakeType</a></li><li><a href="global.html#HMAC1">HMAC1</a></li><li><a href="global.html#HMAC256">HMAC256</a></li><li><a href="global.html#K">K</a></li><li><a href="global.html#Prepend8">Prepend8</a></li><li><a href="global.html#Prepend16">Prepend16</a></li><li><a href="global.html#Prepend24">Prepend24</a></li><li><a href="global.html#PRF256">PRF256</a></li><li><a href="global.html#randomBuffer">randomBuffer</a></li><li><a href="global.html#readUInt24">readUInt24</a></li><li><a href="global.html#RSA_PKCS1_PADDING">RSA_PKCS1_PADDING</a></li><li><a href="global.html#RSA_PKCS1_SHA256">RSA_PKCS1_SHA256</a></li><li><a href="global.html#SHA256">SHA256</a></li><li><a href="global.html#UInt8">UInt8</a></li><li><a href="global.html#UInt16">UInt16</a></li><li><a href="global.html#UInt24">UInt24</a></li><li><a href="global.html#VER12">VER12</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Oct 13 2018 18:15:06 GMT+0000 (Coordinated Universal Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Oct 15 2018 15:53:24 GMT+0000 (Coordinated Universal Time)
 </footer>
 
 <script> prettyPrint(); </script>
