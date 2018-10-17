@@ -31,11 +31,13 @@ tls.connect(8883,'a3dc7azfqxif0n.iot.cn-north-1.amazonaws.com.cn', () => {
       console.log('unexpected server response: ', data)
     }
 
-    if (++count === 3) {
+    if (++count > 3) {
+/**
       setTimeout(() => {
         tls.end()
         setTimeout(() => {}, 3000)
       }, 2000)
+*/
     } else {
       tls.write(MQTT_PINGREQ)
       console.log('MQTT_PINGREQ sent to server', count)

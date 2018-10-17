@@ -23,7 +23,10 @@ server.listen(8124, () => {
     console.log('data')
   })
   client.on('end', () => console.log('client end'))
-  client.on('close', () => console.log('client close'))
+  client.on('close', () => {
+    console.log('client close')
+    client.end()
+  })
 })
 
 
