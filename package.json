@@ -1,6 +1,6 @@
 {
   "name": "telsa",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "tls 1.2 client for iot device with crypto authentication chip.",
   "main": "index.js",
   "directories": {
@@ -21,9 +21,9 @@
   "author": "matianfu@gmail.com",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/wisnuc/telsa/issues"
+    "url": "https://github.com/matianfu/telsa/issues"
   },
-  "homepage": "https://github.com/wisnuc/telsa#readme",
+  "homepage": "https://github.com/matianfu/telsa#readme",
   "devDependencies": {
     "chai": "^4.2.0",
     "eslint": "^6.6.0",
