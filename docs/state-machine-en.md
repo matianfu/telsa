@@ -1,9 +1,7 @@
 
-# Design
+# Design Pattern
 
-`telsa`使用层级状态机模式实现。
-
-
+本文档讨论层级状态机在JavaScript中的实现。`telsa`代码使用该设计模式。
 
 ## State Machine
 

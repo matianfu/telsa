@@ -1,33 +1,21 @@
 
-# Design
+# Design Pattern
 
-`telsa`使用层级状态机模式实现。
-
-
+This section discusses the hierarchical state machine pattern in JavaScript, which is used in `telsa` module. If you want to read or modify the code, you must have a thorough understanding of this pattern.
 
 ## State Machine
 
-UML状态图（State Diagram）是编程中最常使用的描述状态机的方式。该表示方法最初是由David Harel在1987年的论文，*Statecharts: A Visual Formalism for Complex Systems*，中提出的，所以它也常被称为**Harel Statechart**；个人更喜欢称之为**Harel Machine**。
+UML state diagram is probably the most popular notation for state machine in programming.
 
-在Harel Machine中，
+The notation was originally proposed in 1987 by David Harel in his paper titled *Statecharts: A Visual Formalism for Complex Systems*. So it is also refereed to as the Harel Statechart occasionally. In this document,  we call it a Harel machine.
 
+In Harel machine, common properties and behaviors among **concrete states** are further abstracted to **super states**, effectively transforming a flat state space into a hierarchical structure, with lesser states defined, easier to understand, and easier to program.
 
+The hierarchy consist of states as its node. All concrete states are leaf nodes and super states are non-leaf ones. The object always lives in one and only one concrete state. It cannot live in a super state without a concrete state, since a super state is merely an abstraction of common properties, resources and behaviors among several concrete states.
 
+Harel machine is easy to design. In real world programming, however, only the **flat machine** (only one level of hierarchy) is easy to code. The popular state pattern in GoF book is a good example, where each state is implemented as a concrete state class and inherits from a super state for assuming a common behavior interface.
 
-
-
-
-In a Harel machine, common properties and behaviors among **concrete states** are further abstracted to **super states**, effectively transforming a flat state space into a hierarchical structure, with less states defined and much cleaner to understand.
-
-The hierarchical tree consist of state as its node. Concrete states are the leaf nodes in the tree and super states are non-leaf ones. At any time, the module must live in a concrete state. All state node along the path, from root to leaf, collectively represents the full state of the module. 
-
-A module cannot live in a super state alone, since a super state is merely an abstraction of common properties among several concrete states. Without a concrete state, a super state and it's  ancestors can NOT describe the state of the module in full detail.
-
-For a given module, the Harel machine is usually quite easy to design and understand in the form of a UML state diagram. 
-
-In real world programming, however, only the **flat machine** is easy to code. A flat machine is the simplest form of a Hierarchical machine, where there is only one level of hierarchy, that is, a single super state and several concrete states as its children. The famous state pattern of GoF is a good example. In this pattern, each state is implemented as a dedicated class. The hierarchical relationship is encoded by the class inheritance.
-
-While it's convenient to program behavior using class inheritance for the state hierarchy, for all resources are located in one object and methods can easily be reused or overridden, it is a non-trivial job to correctly implement the `exit` and `enter` behavior during state transiton in a multiple level hierarchy. In the language that early-binds the class method, such as C++ or Java, the inheritance behavior of these methods conflicts to the `exit` and `enter` execution sequence required by the state transition in a multiple level hierarchical state machine.
+While it's convenient to program behavior using class inheritance for the state hierarchy, for all resources are located in one object and methods can easily be reused or overridden, it is a non-trivial job to correctly implement the `exit` and `enter` behavior during state transition in a multiple level hierarchy. In the language that early-binds the class method, such as C++ or Java, the inheritance behavior of these methods conflicts to the `exit` and `enter` execution sequence required by the state transition in a multiple level hierarchical state machine.
 
 For JavaScript, this is not the case, because JavaScript is a late-binding language. Even if there are inheritance relationship along the prototypal chain, we can avoid calling `exit` and `enter` using `this` keyword and dot notation. Instead, we can traverse the prototypal chain, **cherry-pick** the method, and execute it using `Function.prototype.apply` method. This is essentially a manual and forceful binding and invocation of the function. The required invocation sequence of `exit` and `enter` methods can be achieved in a very simple form. The only sacrifice is that these two methods cannot be invoked in the code elsewhere. But this is not a rule too painful to live with.
 
@@ -35,7 +23,7 @@ This is not the only problem to be solved in implementing a multiple level hiera
 
 In short, this module implements a state pattern well supporting multiple level hierarchy. With very few rules and tricks, constructing and maintaining the state hierarchy is simple and practical. Of course the code won't look as simple as the simple composition of asynchronous functions or event emitters. But the extra burden are reasonable and the reward is huge.
 
-State machine is not only a rigorous and complete mathematical model of software behaviours, it is also a model intrinsically immune to asynchrony and concurrency. The error handling is robust and graceful. Unlike the flat machine, a hierarchical machine is much easier to change or extend, due to it's capability of supporting multiple level of super states. Inserting a new layer of abstraction is not uncommon when requirement changes. This kind of change involves very few code modification in this pattern. We can safely claim that the hierarchical state pattern is more flexible than a frequently used flat one. In the flat machine, either the abstraction is inadequate, or the further abstraction is encoded in variable and dispatched in `switch` clause, which is hard to read and modify.
+State machine is not only a rigorous and complete mathematical model of software behaviors, it is also a model intrinsically immune to asynchrony and concurrency. The error handling is robust and graceful. Unlike the flat machine, a hierarchical machine is much easier to change or extend, due to it's capability of supporting multiple level of super states. Inserting a new layer of abstraction is not uncommon when requirement changes. This kind of change involves very few code modification in this pattern. We can safely claim that the hierarchical state pattern is more flexible than a frequently used flat one. In the flat machine, either the abstraction is inadequate, or the further abstraction is encoded in variable and dispatched in `switch` clause, which is hard to read and modify.
 
 ## Flat State Machine
 
@@ -99,7 +87,7 @@ true
 
 So either `c` or `p` can be used to identify a class. `c` is more convenient for it's a declared name in the scope.
 
-Sometimes, it is possible to eliminate the `enter` method and merge its logic into constructor for simplicity. 
+Sometimes, it is possbile to eliminate the `enter` method and merge its logic into constructor for simplicity. 
 
 Similarly, we can call `this.enter(...args)` inside the base state class constructor. Then in most cases, concrete state classes does not need to have a constructor. Implementing `enter` and `exit` methods is enough. The code looks a little bit cleaner.
 
@@ -107,7 +95,7 @@ But both simplification are not recommended unless the logic is really simple. C
 
 ### A Pitfall
 
-This flat state machine pattern is sufficient for many real world use cases. And I'd like to explain a critical pitfall of this pattern here, though it is irrelevant to the hierarchical state pattern which is going to be discussed later.
+This flat state machine pattern is sufficient for many real world use cases. And I'd like to explain a critical pitfall of this pattern here, though it is irrelevent to the hierarchical state pattern which is going to be discussed later.
 
 Supposing the context class is an event emitter and its state change is observed by some external objects. It emits `entering`, `entered`, `exiting` and `exited` with corresponding state name. Obviously the best place to trigger the context's `emit` method is inside `setState`:
 
