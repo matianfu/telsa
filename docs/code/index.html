@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Home</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Home</h1>
+
+    
+
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><h1>Introduction</h1>
+<p>Telsa is a <em>minimal</em> TLS 1.2 implementation for aws iot devices.</p>
+<h1>Architecture</h1>
+<p>Telsa</p>
+<h1>Design Pattern</h1>
+<p>This section discusses the hierarchical state machine pattern in JavaScript in general, which is used in this module. If you want to read or modify the code, you must have a thorough understanding of this pattern.</p>
+<h2>State Machine</h2>
+<p>UML state diagram is probably the most popular notation for state machine in programming.</p>
+<p>Such notation was originally proposed in 1987 by David Harel in his paper <em>&quot;Statecharts: A Visual Formalism for Complex Systems&quot;</em>. So it is also mentioned as the <strong>Harel Statechart</strong> frequently. Personally, I prefer to call it a <strong>Harel machine</strong>.</p>
+<p>In a Harel machine, common properties and behaviors among <strong>concrete states</strong> are further abstracted to <strong>super states</strong>, effectively transforming a flat state space into a hierarchical structure, with less states defined and much cleaner to understand.</p>
+<p>The hierarchical tree consist of state as its node. Concrete states are the leaf nodes in the tree and super states are non-leaf ones. At any time, the module must live in a concrete state. All state node along the path, from root to leaf, collectively represents the full state of the module.</p>
+<p>A module cannot live in a super state alone, since a super state is merely an abstraction of common properties among several concrete states. Without a concrete state, a super state and it's  ancestors can NOT describe the state of the module in full detail.</p>
+<p>For a given module, the Harel machine is usually quite easy to design and understand in the form of a UML state diagram.</p>
+<p>In real world programming, however, only the <strong>flat machine</strong> is easy to code. A flat machine is the simplest form of a Hierarchical machine, where there is only one level of hierarchy, that is, a single super state and several concrete states as its children. The famous state pattern of GoF is a good example. In this pattern, each state is implemented as a dedicated class. The hierarchical relationship is encoded by the class inheritance.</p>
+<p>While it's convenient to program behavior using class inheritance for the state hierarchy, for all resources are located in one object and methods can easily be reused or overridden, it is a non-trivial job to correctly implement the <code>exit</code> and <code>enter</code> behavior during state transiton in a multiple level hierarchy. In the language that early-binds the class method, such as C++ or Java, the inheritance behavior of these methods conflicts to the <code>exit</code> and <code>enter</code> execution sequence required by the state transition in a multiple level hierarchical state machine.</p>
+<p>For JavaScript, this is not the case, because JavaScript is a late-binding language. Even if there are inheritance relationship along the prototypal chain, we can avoid calling <code>exit</code> and <code>enter</code> using <code>this</code> keyword and dot notation. Instead, we can traverse the prototypal chain, <strong>cherry-pick</strong> the method, and execute it using <code>Function.prototype.apply</code> method. This is essentially a manual and forceful binding and invocation of the function. The required invocation sequence of <code>exit</code> and <code>enter</code> methods can be achieved in a very simple form. The only sacrifice is that these two methods cannot be invoked in the code elsewhere. But this is not a rule too painful to live with.</p>
+<p>This is not the only problem to be solved in implementing a multiple level hierarchical state machine. But it is the most crucial one.</p>
+<p>In short, this module implements a state pattern well supporting multiple level hierarchy. With very few rules and tricks, constructing and maintaining the state hierarchy is simple and practical. Of course the code won't look as simple as the simple composition of asynchronous functions or event emitters. But the extra burden are reasonable and the reward is huge.</p>
+<p>State machine is not only a rigorous and complete mathematical model of software behaviours, it is also a model intrinsically immune to asynchrony and concurrency. The error handling is robust and graceful. Unlike the flat machine, a hierarchical machine is much easier to change or extend, due to it's capability of supporting multiple level of super states. Inserting a new layer of abstraction is not uncommon when requirement changes. This kind of change involves very few code modification in this pattern. We can safely claim that the hierarchical state pattern is more flexible than a frequently used flat one. In the flat machine, either the abstraction is inadequate, or the further abstraction is encoded in variable and dispatched in <code>switch</code> clause, which is hard to read and modify.</p>
+<h2>Flat State Machine</h2>
+<p>Let's start with a flat machine.</p>
+<p>In classical state pattern (GoF), context and states are implemented by separate classes. All state-specific resources are maintained in state class. The context class holds global resources and simply forwards all external requests to it's state class.</p>
+<p>Each state class has <code>enter</code> and <code>exit</code> methods for constructing and destructing state-specific resources/behaviors respectively. This is a powerful way to ensure the allocation and deallocation of resources, as well as starting and stoping actions, possibly asynchronous and concurrent, to happen at the right time and place.</p>
+<p>The iconic method of state class (and the state pattern) is the <code>setState</code> method. It destructs the current state by calling <code>exit</code> method, constructs the new state, and calls its <code>enter</code> method.</p>
+<blockquote>
+<p>If you are not familiar with state pattern, I recommend you to read GoF's classical book, <em>Design Patterns</em>, or Google state pattern to have a solid knowledge of this pattern. This article assumes you are familiar with it.</p>
+</blockquote>
+<pre class="prettyprint source lang-js"><code>class State {
+  constructor (ctx) {
+    this.ctx = ctx
+  }
+
+  enter () {}
+  exit () {}
+
+  setState (NextState, ...args) {
+    this.exit()
+    this.ctx.state = new NextState(this.ctx, ...args)
+    this.ctx.state.enter()
+  }
+}
+
+class ConcreteState extends State {
+  constructor (ctx, ...args) {
+    super(ctx)
+  }
+}
+
+class Context {
+  constructor () {
+    this.state = new ConcreteState(this)
+    this.state.enter()
+  }
+}
+</code></pre>
+<h3><code>setState</code></h3>
+<p>In this pattern, the first parameter of the <code>setState</code> method is a state class constructor.</p>
+<p>In JavaScript, a class is modeled as a pair <code>(c, p)</code>, where <code>c</code> is the constructor function (aka, class name) and <code>p</code> is a plain object (prototype). There are built-in, mutual references between <code>c</code> and <code>p</code>:</p>
+<ol>
+<li><code>c.prototype</code> is <code>p</code></li>
+<li><code>p.constructor</code> is <code>c</code></li>
+</ol>
+<p>This can be verified in a node REPL:</p>
+<pre class="prettyprint source"><code>> class A {}
+undefined
+> A.prototype.constructor === A
+true
+</code></pre>
+<p>So either <code>c</code> or <code>p</code> can be used to identify a class. <code>c</code> is more convenient for it's a declared name in the scope.</p>
+<p>Sometimes, it is possbile to eliminate the <code>enter</code> method and merge its logic into constructor for simplicity.</p>
+<p>Similarly, we can call <code>this.enter(...args)</code> inside the base state class constructor. Then in most cases, concrete state classes does not need to have a constructor. Implementing <code>enter</code> and <code>exit</code> methods is enough. The code looks a little bit cleaner.</p>
+<p>But both simplification are not recommended unless the logic is really simple. Constructor is where to set up the <strong>structure</strong> of the object while <code>enter</code> is where to start the <strong>behaviors</strong>. They are different. Supposing the (context) object is observed by another object which want to <em>observe</em> a state <code>entering</code> event. Then there is no chance for it to do so if constructor and <code>enter</code> are merged.</p>
+<h3>A Pitfall</h3>
+<p>This flat state machine pattern is sufficient for many real world use cases. And I'd like to explain a critical pitfall of this pattern here, though it is irrelevent to the hierarchical state pattern which is going to be discussed later.</p>
+<p>Supposing the context class is an event emitter and its state change is observed by some external objects. It emits <code>entering</code>, <code>entered</code>, <code>exiting</code> and <code>exited</code> with corresponding state name. Obviously the best place to trigger the context's <code>emit</code> method is inside <code>setState</code>:</p>
+<pre class="prettyprint source lang-js"><code>setState (NextState, ...args) {
+  this.ctx.emit('exiting', this.constructor.name)
+  this.exit()
+  this.ctx.emit('exited', this.constructor.name)
+
+  let next = new NextState(this.ctx, ...args)
+  this.ctx.state = next
+
+  this.ctx.emit('entering', next.constructor.name)
+  this.ctx.state.enter()
+  this.ctx.emit('entered', next.constructor.name)
+}
+</code></pre>
+<p>The danger occurs when <code>setState</code> is immediately called again inside next state's <code>enter</code> method. In this case, the <code>setState</code> and <code>enter</code> methods are nested in the calling stack. <code>entered</code> event will be emitted in a last-in, first-out manner. The observer will receive <code>entered</code> in reversed order.</p>
+<p>We have two solutions here.</p>
+<p>One solution is to invoke <code>setState</code> with <code>process.nextTick()</code> in <code>enter</code>. In this way, an <strong>maybe</strong> state is allowed in design. This solution is simple and intuitive. But the unnecessary asynchrony may rise problem in complex scenarios.</p>
+<blockquote>
+<p>A <strong>maybe</strong> state is a state when entered, may transit to another state immediately, depending on the arguments.</p>
+</blockquote>
+<p>In the other solution, the <strong>maybe</strong> state is strictly forbidden in design. The next state must be unambiguously determined before exiting a state. Conditional logics should be encapsulated by a <strong>function</strong>, rather than inside a state's <code>enter</code> method, if the logic is going to be used in many different code places. This is the <strong>recommended</strong> way. It avoids unnecessary asynchrony by <code>process.nextTick()</code>.</p>
+<p>The importance of the second solution arises when many state machines, possibly organized into a list or tree, shares another larger context. Or we may say it's a <strong>composition</strong> of state machines.</p>
+<p>In such a scenario, <code>process.nextTick()</code> is frequently used to defer or batch an composition-wise operation, such as reschedule certain jobs, when responding to an exteranl event and many state machines are transitting simultaneously. It avoids the job being triggered for each single state machine transition. If <code>nextTick()</code> is allowed for a single state machine transition, it is difficult for the composition context to determine at what time all those <code>nextTick()</code> finishes and the composition-wise deferred or batch job can begin.</p>
+<blockquote>
+<p>Of course all <code>process.nextTick</code> can be tracked. But it is a non-trivial job. It requires a composition-wise counter, which is incremented before calling <code>process.nextTick</code> in a single state machine, and decremented after each nextTick-ed job is finished.</p>
+</blockquote>
+<h3>Re-entry</h3>
+<p><code>setState</code> can be invoked with the same state constructor.</p>
+<p>Denoting an object of <code>ConcreteState1</code> class as <code>s1</code>:</p>
+<pre class="prettyprint source lang-js"><code>s1.setState(ConcreteState1)
+</code></pre>
+<p>This invocation will invoke <code>s1.exit</code>, constructing a <code>next</code> object of the same class, and invoke <code>next.enter</code>.</p>
+<p>In some cases, this behavior is tremendously useful. It immediately abandons all current jobs and deallocates all resources, then re-creates a brand-new state object. If we want to retry something or restart something under certain circumstances, this one-line code will tear down then set up everything like a breeze, providing the <code>enter</code> and <code>exit</code> methods are properly implemented.</p>
+<p>It is also possible to hand over something between two state object of the same class, for example, retried times. They can be passed as the argument of <code>setState</code>. If the logic requires a job to be retried again and again until certain accumulated effect reaches a critical point, this pattern is probably the best way to do the job.</p>
+<p>If the re-entry behavior is not required and harmful if triggered unexpectedly, you can check and forbid it in the <code>setState</code> method.</p>
+<h3>Initialization and Deinitialization</h3>
+<p>The code constructing the first state (usually named <code>InitState</code>) object inside context constructor looks natural and trivial.</p>
+<pre class="prettyprint source lang-js"><code>this.state = new ConcreteState(this)
+this.state.enter()
+</code></pre>
+<p>But this is duplicate logic with the latter half of <code>setState</code>. If more logics are added to <code>setState</code>, such as triggering the event emission, they must also be copied to context constructor.</p>
+<p>Essentially, <code>setState</code> is a batch job. It destructs the previous state and constructs the next one. Initialization is just a special case where previous state is <code>null</code> and deinitialization is the opposite case where next state is <code>null</code>.</p>
+<p>At first thought, <code>setState</code> is a class method and a <code>null</code> object cannot have any method. However, this is <strong>NOT</strong> true in late-binding JavaScript.</p>
+<p>Reference to the class method can be retrieved through it's prototype, so it can be applied to a <code>null</code>, something like:</p>
+<pre class="prettyprint source lang-js"><code>State.prototype.setState.apply(null, [InitState])
+</code></pre>
+<p>In practice, context object is a required parameter for constructing the state object, so we replace <code>null</code> with the context object.</p>
+<pre class="prettyprint source lang-js"><code>// in state class
+setState (NextState, ...args) {
+  if (this instanceof State) {
+    this.ctx.emit('exiting', this.constructor.name)
+    this.exit()
+    this.ctx.emit('exited', this.constructor.name)
+  }
+
+  if (NextState) {
+    let ctx = this instanceof State ? this.ctx : this
+    let next = new NextState(ctx, ...args)
+    this.ctx.state = next
+
+    this.ctx.emit('entering', next.constructor.name)
+    this.ctx.state.enter()
+    this.ctx.emit('entered', next.constructor.name)
+  }
+}
+
+// In context class constructor
+State.prototype.setState.apply(this, [InitState])
+</code></pre>
+<p>Although looks weird, this code makes sense and truly implements the DRY principle.</p>
+<blockquote>
+<p>IMHO, it also reveals that in JavaScript, nothing is <code>static</code> in the sense of that in Java. The implementation of <code>static</code> keyword in ES6 is probably a mistake, for it installs the <code>static</code> members onto constructor <code>c</code>, rather than the prototype object <code>p</code>.</p>
+</blockquote>
+<p>In most cases, the deinitialization (passing <code>null</code> as <code>NextState</code>) is not used.</p>
+<p>Explicitly constructing a final/zombie state (usually named <code>FinalState</code>) is far more practical. A state object can accept all methods from context object. Either ignoring the action (eg. do nothing when <code>stream.write</code> is called) or returning an error gracefully, is much better than throwing an <code>TypeError</code>.</p>
+<h3>Builder Pattern</h3>
+<p>If the context object is an event emitter and its state change is observed, and if the state object is constructed inside the context constructor, the observer will miss the first state's <code>entering</code> or <code>entered</code> event.</p>
+<p>In node.js official document, it is recommended to emit such an event via <code>process.nextTick()</code>. As discussed above, this faked asynchrony is unnecessary. It may poses potential problem in state machine composition.</p>
+<p>The buider pattern perfectly fits this requirement. It is also very popular in node.js, such as event emitters and streams.</p>
+<p>The context class should provide an <code>enter</code> method, where the first state object is constructed. A factory method is also recommended. Then we can have a familiar code pattern for constructing a context object.</p>
+<pre class="prettyprint source lang-js"><code>let x = createContextObject(...)
+  .on('entering', state => {...})
+  .on('entered', state => {...})
+  .on('exiting', state => {...})
+  .on('exited', state => {...})
+  .enter()
+</code></pre>
+<blockquote>
+<p><code>enter</code> is just a example word here. In real world, it should be a word conforming to semantic convention. For example, a duplex stream may start its job by <code>connect</code> method, just like <code>net.Socket</code> does.</p>
+</blockquote>
+<h2>Hierarchical State Machine</h2>
+<p>Now we can have a talk on how to construct a hierarchical state machine in JavaScript.</p>
+<p>A real benefit of Harel machine is that the <code>enter</code> and <code>exit</code> logic are distributed into several layered states. Besides the top-level base state, there are intermediate layers of abstract states. Each intermediate state, or super state, can hold a sub-context and have behaviors of its own.</p>
+<p>Supposing we have the following state hierarchy:</p>
+<pre class="prettyprint source"><code>     S0 (base state)
+    /  \
+   S1  S2
+  /  \
+S11  S12
+</code></pre>
+<p>When transitting from S11 to S12, the <code>setState</code> should execute <code>S11.exit</code> and <code>S12.enter</code> sequentially. When transitting from S11 to S2, the sequence should be <code>S11.exit</code>, <code>S1.exit</code> and <code>S2.enter</code>.</p>
+<p>Generally speaking, when transitting from concrete state Sx to Sy, there exists a common ancester (super state) denoted by Sca:</p>
+<ol>
+<li>from Sx (inclusive) to Sca (exclusive), execute <code>exit</code> method in bottom-up sequence</li>
+<li>from Sca (exclusive) to Sy (inclusive), construct and execute <code>enter</code> method in top-down sequence</li>
+</ol>
+<p>In implementation, there are two ways to construct such a hierarchy. It can be implemented using a tree data structure with mutual references as <code>parent</code> and <code>children[]</code> properties.</p>
+<p>This pattern is versatile but very awkward. It has the following pros and cons.</p>
+<ol>
+<li>[Pro] the up-and-down sequence of calling <code>exit</code> and <code>enter</code> is straightforward.</li>
+<li>[Pro] the sub-context are well separated in different object, so there is no name conflicts.</li>
+<li>[Con] there is no inheritence between higher layer states and lower layer ones. It's painful to implement behaviors since functions and contexts are spreaded among several objects.</li>
+</ol>
+<p>The first two pros can hardly balance the last con in most cases.</p>
+<p>Another way is using class inheritance to construct the hierarchy as the classical state pattern does. Two problems arise immediately.</p>
+<p>First, all super state's sub-context and the concrete state's state-specific things are merged into a single object, the object's properties must be well designed to avoid name conflict.</p>
+<p>Second, the inheritance feature of <code>enter</code> and <code>exit</code> methods must NOT be used. Instead, the up-and-down sequence of <code>exit</code> and <code>enter</code> is implemented by a manual iteration along the prototypal inheritance chain and these two methods are invoked manually without inheritance behavior.</p>
+<h3>State Class Constructor</h3>
+<p>In flat state machine, the first parameter of the constructor is the context object. This is OK if there's only global context for all states.</p>
+<p>In hierarchical state machine, however, each super state has its own sub-context which may need to be preserved during transition. For example, when transitting from S11 to S12 state, the S1-specific context should be preserved. This requirement can be implemented in the following method.</p>
+<p>First, the first parameter of base class constructor should be changed from the global context object to the previous state object. A state object has all contexts inside it, either global or specific to certain super state.</p>
+<p>Second, considering the initialization discussed in flat state machine, when constructing the first state, there is no previous state object but the global context object is required. So the type of the first parameter of the base class constructor should be <code>State | Context</code>.</p>
+<pre class="prettyprint source lang-js"><code>class State {
+  constructor (soc) {
+    this.ctx = soc instanceof State ? soc.ctx : soc
+  }
+}
+</code></pre>
+<p>In the constructor of a super state, if the first argument is an context object, or the first argument is an state object, but is NOT a descendant of this state, in either case, a new sub-context should be created. Otherwise, the old sub-context should be copied.</p>
+<pre class="prettyprint source lang-js"><code>class SuperState1 extends State {
+  constructor (soc) {
+    super(soc)
+    if (soc instanceof SuperState1) {
+      this.ss1 = soc.ss1
+    } else {
+      // constructing a new sub context
+      this.ss1 = {
+        ...
+      }
+    }
+  }
+}
+</code></pre>
+<p>Noticing that the <code>ss1</code> property is <code>SuperState1</code>-specific. Be careful to choose a unique name and avoid conflicts.</p>
+<p>In JavaScript, constructing a sub-class object using <code>new</code> keyword always calls the constructors in the top-down sequence along the inheritance chain. This cannot be modified.</p>
+<blockquote>
+<p>It is possible to hijack some constructor's behavior via <code>return</code>. But this is error prone and is not suitable here.</p>
+</blockquote>
+<p>Keep in mind that the only purpose of the super state's constructor, is to create a new sub-context, or to <strong>take over</strong> an old one. Nothing else should be done here. Considering the S11-&gt;S12 transition, S1's constructor is invoked inevitably. If any <code>enter</code> logic is merged into constructor it will be run during this transition, which is wrong and must be avoided.</p>
+<blockquote>
+<p>Again, <em>constructor constructs structure and <code>enter</code> starts behavior</em>.</p>
+</blockquote>
+<h3><code>setState</code></h3>
+<p><code>setState</code> is tricky and unusual in hierarchical state machine, but is not difficult.</p>
+<p>Modern JavaScript provides an <code>Object.getPrototypeOf()</code> method to replace the non-standard <code>__proto__</code> property for accessing the prototypal object of any given object.</p>
+<p><code>Function.prototype.apply()</code> is used to apply the <code>enter</code> or <code>exit</code> methods along inheritance chain onto <code>this</code> object. If a super state has no <code>enter</code> or <code>exit</code> method of its own, it is skipped.</p>
+<pre class="prettyprint source lang-js"><code>  setState (NextState, ...args) {
+    let p = State.prototype
+    let qs = []
+
+    for (p = Object.getPrototypeOf(this);
+      !(NextState.prototype instanceof p.constructor);
+      p.hasOwnProperty('exit') && p.exit.apply(this),
+      p = Object.getPrototypeOf(p));
+  
+    let ctx = this instanceof State ? this.ctx : this
+    let nextState = new NextState(this, ...args)
+    ctx.state = nextState
+
+    for (let q = NextState.prototype; q !== p;
+      q.hasOwnProperty('enter') && qs.unshift(q),
+      q = Object.getPrototypeOf(q));
+
+    qs.forEach(q => q.enter.apply(ctx.state))
+  }
+</code></pre>
+<h3>Initialization</h3>
+<p>Similar with that in flat state machine, we can encapsulate the construction and destruction of state object solely in <code>setState</code>. Here we have even more benefit for the construction logic is more complex.</p>
+<pre class="prettyprint source lang-js"><code>  setState (NextState, ...args) {
+    let p = State.prototype
+    let qs = []
+
+    if (this instanceof State) {
+      for (p = Object.getPrototypeOf(this);
+        !(NextState.prototype instanceof p.constructor);
+        p.hasOwnProperty('exit') && p.exit.apply(this),
+        p = Object.getPrototypeOf(p));
+
+      this.exited = true
+    }
+
+    if (NextState) {
+      let ctx = this instanceof State ? this.ctx : this
+      let nextState = new NextState(this, ...args)
+      ctx.state = nextState
+
+      for (let q = NextState.prototype; q !== p;
+        q.hasOwnProperty('enter') && qs.unshift(q),
+        q = Object.getPrototypeOf(q));
+
+      qs.forEach(q => q.enter.apply(ctx.state))
+    }
+  }
+
+// in context constructor or enter
+State.prototype.apply(this, [InitState])
+</code></pre>
+<h3>Error Handling</h3>
+<h2>Summary</h2>
+<p>I will give some complete examples in coming days.</p>
+<p>In short, an easy-to-understand and easy-to-use state machine pattern is invaluable for software construction, especially in the world of asynchronous and concurrent programming.</p>
+<p>JavaScript and node.js perfectly fits the need.</p>
+<p>The pattern discussed above are heavily used in our products. They evolves in several generations and gradually evovles into a compact and concise pattern, fully unleashing the power of JavaScript. Similar pattern implemented in other languages requires far more boiler-plate codes. And certian tricks cannot be done at all.</p>
+<p>This is the first half and basic part of programming JavaScript concurrently, either in Browser or in Node.js. The hierarchical state machine discussed here can handle any kind of intractable concurrent problem as long as it could be modeled as a single state machine.</p>
+<p>Both event emitter and asynchronous functions with callback are just degenerate state machines. A thorough understanding of state machine is a must-have for JavaScript programmers.</p>
+<p>The other half is how to compose several or large quantity of individual state machines into a single one, concurrently of course. I won't talk it in near future, but we do have powerful patterns and extensive practices. When I am quite sure on the composition definitions and corresponding code patterns, I will talk it for discussion.</p></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="CertificateRequest.html">CertificateRequest</a></li><li><a href="CertificateVerify.html">CertificateVerify</a></li><li><a href="ChangeCipherSpec.html">ChangeCipherSpec</a></li><li><a href="Connected.html">Connected</a></li><li><a href="Connecting.html">Connecting</a></li><li><a href="Context.html">Context</a></li><li><a href="Established.html">Established</a></li><li><a href="FinalState.html">FinalState</a></li><li><a href="HandshakeContext.html">HandshakeContext</a></li><li><a href="HandshakeState.html">HandshakeState</a></li><li><a href="InitState.html">InitState</a></li><li><a href="RecordProtocol.html">RecordProtocol</a></li><li><a href="ServerCertificate.html">ServerCertificate</a></li><li><a href="ServerFinished.html">ServerFinished</a></li><li><a href="ServerHello.html">ServerHello</a></li><li><a href="ServerHelloDone.html">ServerHelloDone</a></li><li><a href="State.html">State</a></li><li><a href="VerifyServerCertificate.html">VerifyServerCertificate</a></li></ul><h3>Global</h3><ul><li><a href="global.html#AES_128_CBC_SHA">AES_128_CBC_SHA</a></li><li><a href="global.html#AlertDescription">AlertDescription</a></li><li><a href="global.html#ContentType">ContentType</a></li><li><a href="global.html#createCipher">createCipher</a></li><li><a href="global.html#createDecipher">createDecipher</a></li><li><a href="global.html#createSequenceNumber">createSequenceNumber</a></li><li><a href="global.html#HandshakeType">HandshakeType</a></li><li><a href="global.html#HMAC1">HMAC1</a></li><li><a href="global.html#HMAC256">HMAC256</a></li><li><a href="global.html#K">K</a></li><li><a href="global.html#Prepend8">Prepend8</a></li><li><a href="global.html#Prepend16">Prepend16</a></li><li><a href="global.html#Prepend24">Prepend24</a></li><li><a href="global.html#PRF256">PRF256</a></li><li><a href="global.html#randomBuffer">randomBuffer</a></li><li><a href="global.html#readUInt24">readUInt24</a></li><li><a href="global.html#RSA_PKCS1_PADDING">RSA_PKCS1_PADDING</a></li><li><a href="global.html#RSA_PKCS1_SHA256">RSA_PKCS1_SHA256</a></li><li><a href="global.html#SHA256">SHA256</a></li><li><a href="global.html#UInt8">UInt8</a></li><li><a href="global.html#UInt16">UInt16</a></li><li><a href="global.html#UInt24">UInt24</a></li><li><a href="global.html#VER12">VER12</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Thu Nov 07 2019 17:02:26 GMT+0800 (China Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

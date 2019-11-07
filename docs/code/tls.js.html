@@ -1,4 +1,32 @@
-const path = require('path')
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: tls.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: tls.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const path = require('path')
 const fs = require('fs')
 const child = require('child_process')
 const { Duplex } = require('stream')
@@ -187,7 +215,7 @@ pseudo random function for key generation and expansion
 const PRF256 = (secret, label, seed, length) => {
   seed = concat([from(label, 'binary'), seed])
   let P_HASH = Buffer.alloc(0)
-  for (let A = from(seed); P_HASH.length < length;
+  for (let A = from(seed); P_HASH.length &lt; length;
     A = HMAC256(secret, A),
     P_HASH = concat([P_HASH, HMAC256(secret, concat([A, seed]))]));
   return P_HASH.slice(0, length)
@@ -272,7 +300,7 @@ const createDecipher = (key, macKey) => {
     const d = createDecipheriv('aes-128-cbc', key, iv).setAutoPadding(false)
     const dec = concat([d.update(data.slice(16)), d.final()])
     const len = dec[dec.length - 1] + 1
-    if (dec.length < len) throw new Error('bad padding')
+    if (dec.length &lt; len) throw new Error('bad padding')
     const pad = dec.slice(dec.length - len)
     if (!pad.equals(Buffer.alloc(len, len - 1))) throw new Error('bad padding')
     data = dec.slice(0, dec.length - len - 20)
@@ -314,7 +342,7 @@ class State {
       console.log('- exiting ' + this.constructor.name)
       for (p = Object.getPrototypeOf(this);
         !(NextState.prototype instanceof p.constructor);
-        p.hasOwnProperty('exit') && p.exit.apply(this),
+        p.hasOwnProperty('exit') &amp;&amp; p.exit.apply(this),
         p = Object.getPrototypeOf(p));
 
       this.exited = true
@@ -325,7 +353,7 @@ class State {
       const nextState = new NextState(this, ...args)
       ctx.state = nextState
       for (let q = NextState.prototype; q !== p;
-        q.hasOwnProperty('enter') && qs.unshift(q),
+        q.hasOwnProperty('enter') &amp;&amp; qs.unshift(q),
         q = Object.getPrototypeOf(q));
 
       qs.forEach(q => q.enter.apply(ctx.state))
@@ -541,13 +569,13 @@ class RecordProtocol {
           this.state.onChangeCipherSpec(shift(1))
           break
         case ContentType.ALERT:
-          if (this.frag.length < 2) return
+          if (this.frag.length &lt; 2) return
           this.onAlert(shift(2))
           break
         case ContentType.HANDSHAKE: {
-          if (this.frag.length < 4) return
+          if (this.frag.length &lt; 4) return
           const length = readUInt24(this.frag.slice(1))
-          if (this.frag.length < 4 + length) return
+          if (this.frag.length &lt; 4 + length) return
           this.state.onHandshake(shift(4 + length))
         } break
         case ContentType.APPLICATION_DATA:
@@ -568,11 +596,11 @@ class RecordProtocol {
     this.data = concat([this.data, data])
     while (this.data.length >= 5) {
       const type = this.data[0]
-      if (type < 20 || type > 23) throw new Error('unknown content type')
+      if (type &lt; 20 || type > 23) throw new Error('unknown content type')
       const version = this.data.readUInt16BE(1)
       if (version !== 0x0303) throw new Error('unsupported protocol version')
       const length = this.data.readUInt16BE(3)
-      if (this.data.length < 5 + length) break
+      if (this.data.length &lt; 5 + length) break
       let frag = this.data.slice(5, 5 + length)
       this.data = this.data.slice(5 + length)
       if (this.decipher) frag = this.decipher(type, frag)
@@ -665,7 +693,7 @@ class HandshakeContext {
     this.clientWriteKey = keys.slice(40, 56)
     this.serverWriteKey = keys.slice(56, 72)
     this.iv = Array.from(keys.slice(72))
-      .reduce((sum, c, i) => (sum + BigInt(c) << (BigInt(8) * BigInt(i))), BigInt(0))
+      .reduce((sum, c, i) => (sum + BigInt(c) &lt;&lt; (BigInt(8) * BigInt(i))), BigInt(0))
   }
 
   clientVerifyData () {
@@ -753,12 +781,12 @@ class ServerHello extends HandshakeState {
 class ServerCertificate extends HandshakeState {
   onCertificate (data) {
     const shift = size => K(data.slice(0, size))(data = data.slice(size))
-    if (data.length < 3 ||
+    if (data.length &lt; 3 ||
       readUInt24(shift(3)) !== data.length) throw new Error('invalid message length')
 
     this.hs.serverCertificates = []
     while (data.length) {
-      if (data.length < 3 ||
+      if (data.length &lt; 3 ||
         readUInt24(data) + 3 > data.length) throw new Error('invalid cert length')
       this.hs.serverCertificates.push(shift(readUInt24(shift(3))))
     }
@@ -776,10 +804,10 @@ class CertificateRequest extends HandshakeState {
   onCertificateRequest (data) {
     const shift = size => K(data.slice(0, size))(data = data.slice(size))
 
-    if (data.length < 1 || data[0] + 1 > data.length) throw new Error('invalid length')
+    if (data.length &lt; 1 || data[0] + 1 > data.length) throw new Error('invalid length')
     this.hs.certificateTypes = Array.from(shift(shift(1)[0]))
 
-    if (data.length < 2 || data.readUInt16BE() % 2 ||
+    if (data.length &lt; 2 || data.readUInt16BE() % 2 ||
       data.readUInt16BE() + 2 > data.length) throw new Error('invalid length')
     this.hs.signatureAlgorithms = Array
       .from(shift(shift(2).readUInt16BE()))
@@ -818,7 +846,7 @@ class VerifyServerCertificate extends HandshakeState {
     pems.unshift(ca)
     const bundle = pems.join('\n')
 
-    const cmd = `openssl verify -CAfile <(echo -e "${bundle}")`
+    const cmd = `openssl verify -CAfile &lt;(echo -e "${bundle}")`
     this.openssl = child.exec(cmd, { shell: '/bin/bash' }, (err, stdout) => {
       if (this.exited) return
       const token = stdout.trim()
@@ -978,3 +1006,26 @@ class Context extends Duplex {
 }
 
 module.exports = Context
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="CertificateRequest.html">CertificateRequest</a></li><li><a href="CertificateVerify.html">CertificateVerify</a></li><li><a href="ChangeCipherSpec.html">ChangeCipherSpec</a></li><li><a href="Connected.html">Connected</a></li><li><a href="Connecting.html">Connecting</a></li><li><a href="Context.html">Context</a></li><li><a href="Established.html">Established</a></li><li><a href="FinalState.html">FinalState</a></li><li><a href="HandshakeContext.html">HandshakeContext</a></li><li><a href="HandshakeState.html">HandshakeState</a></li><li><a href="InitState.html">InitState</a></li><li><a href="RecordProtocol.html">RecordProtocol</a></li><li><a href="ServerCertificate.html">ServerCertificate</a></li><li><a href="ServerFinished.html">ServerFinished</a></li><li><a href="ServerHello.html">ServerHello</a></li><li><a href="ServerHelloDone.html">ServerHelloDone</a></li><li><a href="State.html">State</a></li><li><a href="VerifyServerCertificate.html">VerifyServerCertificate</a></li></ul><h3>Global</h3><ul><li><a href="global.html#AES_128_CBC_SHA">AES_128_CBC_SHA</a></li><li><a href="global.html#AlertDescription">AlertDescription</a></li><li><a href="global.html#ContentType">ContentType</a></li><li><a href="global.html#createCipher">createCipher</a></li><li><a href="global.html#createDecipher">createDecipher</a></li><li><a href="global.html#createSequenceNumber">createSequenceNumber</a></li><li><a href="global.html#HandshakeType">HandshakeType</a></li><li><a href="global.html#HMAC1">HMAC1</a></li><li><a href="global.html#HMAC256">HMAC256</a></li><li><a href="global.html#K">K</a></li><li><a href="global.html#Prepend8">Prepend8</a></li><li><a href="global.html#Prepend16">Prepend16</a></li><li><a href="global.html#Prepend24">Prepend24</a></li><li><a href="global.html#PRF256">PRF256</a></li><li><a href="global.html#randomBuffer">randomBuffer</a></li><li><a href="global.html#readUInt24">readUInt24</a></li><li><a href="global.html#RSA_PKCS1_PADDING">RSA_PKCS1_PADDING</a></li><li><a href="global.html#RSA_PKCS1_SHA256">RSA_PKCS1_SHA256</a></li><li><a href="global.html#SHA256">SHA256</a></li><li><a href="global.html#UInt8">UInt8</a></li><li><a href="global.html#UInt16">UInt16</a></li><li><a href="global.html#UInt24">UInt24</a></li><li><a href="global.html#VER12">VER12</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Thu Nov 07 2019 17:02:26 GMT+0800 (China Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
