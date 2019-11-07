@@ -1,6 +1,6 @@
 {
   "name": "telsa",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "tls 1.2 client for iot device with crypto authentication chip.",
   "main": "index.js",
   "directories": {
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wisnuc/telsa.git"
+    "url": "git+https://github.com/matianfu/telsa.git"
   },
   "keywords": [
     "tls"
