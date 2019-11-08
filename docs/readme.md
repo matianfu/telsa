@@ -1,11 +1,215 @@
+# Overview
+
+`telsa` is a lightweight tls implementation supporting hardware crypto integration. It is specifically designed for aws iot devices with crypto chips, such as Microchip/Atmel ATECC508a/608a.
+
+
+
+`openssl` supports third-party crypto by openssl engine. Theoretically, this should be the proper way to integrate a crypto hardware with openssl and node. In practice, however,
+
+1. Microchip does not provide a proper linux driver;
+2. The openssl engine provided by Microchip is outdated and not actively maintained;
+3. Node statically links openssl and updates version frequently over evolution;
+
+This leaves application developers a great headache to assure the compatibility among driver, openssl, and node. So we decide to develop a standalone tls implementation independent of openssl and node.
+
+
+
+`telsa` merely meets the minimal requirement by aws iot:
+
+1. tls 1.2 only 
+2. support only one cipher, `TLS_RSA_WITH_AES_128_CBC_SHA`
+3. `Certificate Request` is mandatory. This is optional in tls spec but mandatory for aws iot server
+
+
+
+A tls implementation requires processing x509 certificates, including:
+
+- conversion between different certificate format, such as DER or PEM
+- extraction of public key
+- verification of certificate chain
+
+These jobs are mainly performed by `openssl` command, keeping `telsa` to be small and simple. For an iot device without user login or third-party services, the security risk is acceptable.
+
+
+
+`telsa` is written in JavaScript. The performance should be more than enough for a mqtt client. But it is not recommended for data communication with heavy load. 
+
+
+
+`telsa` is self-contained. There is no other dependencies except the `openssl` command mentioned above. 
+
+
+
+# Use Case and Constraints
+
+## Use case
+
+`telsa` is going to be used with [`mqtt`](https://github.com/mqttjs/MQTT.js) and [`aws-iot-device-sdk`](https://github.com/aws/aws-iot-device-sdk-js).
+
+
+
+According to [`mqtt document`](https://github.com/mqttjs/MQTT.js#mqttclientstreambuilder-options), the underlying transport (connection) could be anything implementing a node `Stream` class and supporting `connect` event. The developer can provide its own `streamBuilder` which returns a `connection`.
+
+
+
+In `aws-iot-device-sdk`, [the following code](https://github.com/aws/aws-iot-device-sdk-js/blob/master/device/lib/tls.js) creates a `streamBuilder` for node tls.
+
+```javascript
+var tls = require('tls');
+
+function buildBuilder(mqttClient, opts) {
+   var connection;
+
+   connection = tls.connect(opts);
+
+   function handleTLSerrors(err) {
+      mqttClient.emit('error', err);
+      connection.end();
+   }
+
+   connection.on('secureConnect', function() {
+      if (!connection.authorized) {
+         connection.emit('error', new Error('TLS not authorized'));
+      } else {
+         connection.removeListener('error', handleTLSerrors);
+      }
+   });
+
+   connection.on('error', handleTLSerrors);
+   return connection;
+}
+
+module.exports = buildBuilder;
+```
+
+
+
+node `tls` is a subclass of `net.Socket`. `net.Socket` has its own `connect` event, indicating a tcp connection is established. `tls` adds a `secureConnect` event to indicate a tls handshake is successful.
+
+
+
+`aws-iot-device-sdk` does not block the `connect` event and translate `secureConnect` to the `connect` event required by `mqttClient`. This is not a problem since the tls could cache the written data when a secure connection has not been established. It just hooks an error handler on connection, handling any error occurred before `secureConnect` by emitting an error directly via `mqttClient.emit` (since the connection is not available yet). If the connection is established without proper authorization, the error is emitted via `connection.emit`. For `mqtt`, this error is emitted well after the `connect` event (tcp connection). After the connection is properly authorized, the error handler is removed and all subsequent errors are handled by `mqttClient`.
+
+
+
+## Interface Definition
+
+`telsa` is not designed to be an drop-in replacement for node tls. Instead, it merely supports the requirement by `mqtt`, which means:
+
+- `connect` event is supported and indicates a secure connection is established
+- `secureConnect` event in node tls is not supported
+- `lookup`, `ready`, and `timeout` events in `net.Socket` are not supported
+- All `stream.Readable` and `stream.Writable` events are supported. This is implemented by subclassing `stream.Duplex`.
+  - `writable._write`
+  - `writable._writev` 
+  - `writable._final`
+  - `readable._read`
+  - `writable._destroy` & `readable.destroy`
+  - the following events supported by `stream.Readable` and `stream.Writable`  are not concern since they are implemented by `stream.Duplex`, as long as above methods are properly implemented and the `readable.push` is properly used.
+    + `writable.close`
+    + `writable.drain`
+    + `writable.finish`
+    + `writable.pipe`
+    + `writable.unpipe`
+    + `readable.close`
+    + `readable.data`
+    + `readable.end`
+    + `readable.readable`
+
+This list is the interface spec definition for `tesla`.
+
+### `telsa.connect`
+
+
+
+## Error Handling
+
+For implementing `stream.Writable`, node documents has the following advice for error handling:
+
+> **Errors While Writing**
+>
+> It is recommended that errors occurring during the processing of the `writable._write()` and `writable._writev()` methods are reported by invoking the callback and passing the error as the first argument. This will cause an `'error'` event to be emitted by the `Writable`. Throwing an `Error` from within `writable._write()` can result in unexpected and inconsistent behavior depending on how the stream is being used. Using the callback ensures consistent and predictable handling of errors.
+
+
+
+For implementing `stream.Readable`, node documents has the following advice for error handling:
+
+> **Errors While Reading**
+> 
+> It is recommended that errors occurring during the processing of the `readable._read()` method are emitted using the `'error'` event rather than being thrown. Throwing an Error from within `readable._read()` can result in unexpected and inconsistent behavior depending on whether the stream is operating in flowing or paused mode. Using the `'error'` event ensures consistent and predictable handling of errors.
+
+For other errors not occurred during `writable._write()` or `readable._read()`, emitting the error is the proper way.
+
+
 
 # Design
 
-`telsa`使用层级状态机模式实现。
+`telsa` is implemented with a hierarchical state machine. There is a `context` object as the context and a bunch of `state` objects representing the sub-states:
+
+```
+state class				|
+------------------------------------------------------------------------------------------
+State					|
+  InitState
+  Connecting
+  Connected
+    HandshakeState
+      ServerHello
+      
+    Established
+  FinalState
+```
+
+|state class|Comment|
+|-|-|
+|State|base|
+|> InitState|initial state|
+|> Connecting|socket connecting|
+|> Connected|socket connected|
+|>> HandshakeState|handshaking|
+|>>> ServerHello|client hello sent, expecting server hello|
+|>>> ServerCertificate|expecting server certificate|
+|>>> CertificateRequest|expecting certificate request|
+|>>> ServerHelloDone|expecting server hello done|
+|>>> VerifyServerCertificates|verify server certificates|
+|>>> CertificateVerify|1. calc signature<br/>2. send certificate verify<br/>, chage client cipher spec, send finished.|
+|>>> ChangeCipherSpec|expect server change cipher spec|
+|>>> ServerFinished | expect server finished|
+|>> Established||
+|> FinalState||
+
+
+
+
+
+## RecordProtocol
+
+RP单独封装为一个Class，
+
+
+
+
+
+
+
 
 
 
 ## State Machine
+
+```
+
+```
+
+
+
+
+
+​	
+
+
+
+
 
 UML状态图（State Diagram）是编程中最常使用的描述状态机的方式。该表示方法最初是由David Harel在1987年的论文，*Statecharts: A Visual Formalism for Complex Systems*，中提出的，所以它也常被称为**Harel Statechart**；个人更喜欢称之为**Harel Machine**。
 
