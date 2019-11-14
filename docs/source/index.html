@@ -2,23 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Home</title>
+    <title>Home | Home</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/bootstrap.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-jsdoc.css">
     <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="styles/tui-doc.css">
+
+    
 </head>
-
 <body>
+<nav class="lnb" id="lnb">
+    <div class="logo" style="">
+        
+            <img src="img/toast-ui.png" width="100%" height="100%">
+        
+    </div>
+    <div class="title">
+        <h1><a href="index.html" class="link">Home</a></h1>
+        
+    </div>
+    <div class="search-container" id="search-container">
+        <input type="text" placeholder="Search">
+        <ul></ul>
+    </div>
+    
+    <div class="lnb-api hidden"><h3>Classes</h3><ul><li><a href="HandshakeContext.html">HandshakeContext</a><button type="button" class="hidden toggle-subnav btn btn-link">  <span class="glyphicon glyphicon-plus"></span></button><div class="hidden" id="HandshakeContext_sub"></div></li><li><a href="Telsa.html">Telsa</a><button type="button" class="hidden toggle-subnav btn btn-link">  <span class="glyphicon glyphicon-plus"></span></button><div class="hidden" id="Telsa_sub"><div class="member-type">Members</div><ul class="inner"><li><a href="Telsa.html#blocked">blocked</a></li><li><a href="Telsa.html#cipher">cipher</a></li><li><a href="Telsa.html#decipher">decipher</a></li><li><a href="Telsa.html#fragment">fragment</a></li><li><a href="Telsa.html#hs">hs</a></li><li><a href="Telsa.html#incomming">incomming</a></li><li><a href="Telsa.html#opts">opts</a></li><li><a href="Telsa.html#socket">socket</a></li></ul><div class="member-type">Methods</div><ul class="inner"><li><a href="Telsa.html#_final">_final</a></li><li><a href="Telsa.html#_read">_read</a></li><li><a href="Telsa.html#_write">_write</a></li><li><a href="Telsa.html#handleAlert">handleAlert</a></li><li><a href="Telsa.html#handleApplicationData">handleApplicationData</a></li><li><a href="Telsa.html#handleCertificate">handleCertificate</a></li><li><a href="Telsa.html#handleCertificateRequest">handleCertificateRequest</a></li><li><a href="Telsa.html#handleChangeCipherSpec">handleChangeCipherSpec</a></li><li><a href="Telsa.html#handleHandshakeMessage">handleHandshakeMessage</a></li><li><a href="Telsa.html#handleServerHello">handleServerHello</a></li><li><a href="Telsa.html#handleServerHelloDone">handleServerHelloDone</a></li><li><a href="Telsa.html#handleSocketData">handleSocketData</a></li><li><a href="Telsa.html#maxFragmentLength">maxFragmentLength</a></li><li><a href="Telsa.html#readFragment">readFragment</a></li><li><a href="Telsa.html#readMessage">readMessage</a></li><li><a href="Telsa.html#readMessageFromFragment">readMessageFromFragment</a></li><li><a href="Telsa.html#send">send</a></li><li><a href="Telsa.html#sendAlert">sendAlert</a></li><li><a href="Telsa.html#sendApplicationData">sendApplicationData</a></li><li><a href="Telsa.html#sendChangeCipherSpec">sendChangeCipherSpec</a></li><li><a href="Telsa.html#sendClientCertificate">sendClientCertificate</a></li><li><a href="Telsa.html#sendClientHello">sendClientHello</a></li><li><a href="Telsa.html#sendHandshakeMessage">sendHandshakeMessage</a></li><li><a href="Telsa.html#shiftFragment">shiftFragment</a></li></ul></div></li></ul></div><div class="lnb-api hidden"><h3>Global</h3><ul><li><a href="global.html#AES_128_CBC_SHA">AES_128_CBC_SHA</a></li><li><a href="global.html#AlertDescription">AlertDescription</a></li><li><a href="global.html#bash">bash</a></li><li class="hidden"><a href="global.html#CipherFunction">CipherFunction</a></li><li><a href="global.html#ContentType">ContentType</a></li><li><a href="global.html#createCipher">createCipher</a></li><li><a href="global.html#createDecipher">createDecipher</a></li><li><a href="global.html#createSequenceNumber">createSequenceNumber</a></li><li class="hidden"><a href="global.html#DecipherFunction">DecipherFunction</a></li><li><a href="global.html#derToPem">derToPem</a></li><li><a href="global.html#extractPublicKey">extractPublicKey</a></li><li class="hidden"><a href="global.html#Fragment">Fragment</a></li><li><a href="global.html#HandshakeType">HandshakeType</a></li><li><a href="global.html#handshakeTypeName">handshakeTypeName</a></li><li><a href="global.html#HMAC1">HMAC1</a></li><li><a href="global.html#HMAC256">HMAC256</a></li><li><a href="global.html#K">K</a></li><li class="hidden"><a href="global.html#Message">Message</a></li><li><a href="global.html#Prepend8">Prepend8</a></li><li><a href="global.html#Prepend16">Prepend16</a></li><li><a href="global.html#Prepend24">Prepend24</a></li><li><a href="global.html#PRF256">PRF256</a></li><li><a href="global.html#randomBuffer">randomBuffer</a></li><li><a href="global.html#readUInt24">readUInt24</a></li><li><a href="global.html#RSA_PKCS1_PADDING">RSA_PKCS1_PADDING</a></li><li><a href="global.html#RSA_PKCS1_SHA256">RSA_PKCS1_SHA256</a></li><li class="hidden"><a href="global.html#SequenceNumberFunction">SequenceNumberFunction</a></li><li><a href="global.html#SHA256">SHA256</a></li><li><a href="global.html#UInt8">UInt8</a></li><li><a href="global.html#UInt16">UInt16</a></li><li><a href="global.html#UInt24">UInt24</a></li><li><a href="global.html#VER12">VER12</a></li><li><a href="global.html#verifyCertificateChain">verifyCertificateChain</a></li></ul></div>
+</nav>
+<div id="resizer"></div>
 
-<div id="main">
-
-    <h1 class="page-title">Home</h1>
-
+<div class="main" id="main">
     
 
 
@@ -26,10 +44,6 @@
     
 
 
-    <h3> </h3>
-
-
-
 
 
 
@@ -38,8 +52,6 @@
 
 
     
-
-
 
 
 
@@ -49,17 +61,24 @@
 
 </div>
 
-<nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="HandshakeContext.html">HandshakeContext</a></li><li><a href="Telsa.html">Telsa</a></li></ul><h3>Global</h3><ul><li><a href="global.html#AES_128_CBC_SHA">AES_128_CBC_SHA</a></li><li><a href="global.html#AlertDescription">AlertDescription</a></li><li><a href="global.html#bash">bash</a></li><li><a href="global.html#ContentType">ContentType</a></li><li><a href="global.html#createCipher">createCipher</a></li><li><a href="global.html#createDecipher">createDecipher</a></li><li><a href="global.html#createSequenceNumber">createSequenceNumber</a></li><li><a href="global.html#derToPem">derToPem</a></li><li><a href="global.html#HandshakeType">HandshakeType</a></li><li><a href="global.html#handshakeTypeName">handshakeTypeName</a></li><li><a href="global.html#HMAC1">HMAC1</a></li><li><a href="global.html#HMAC256">HMAC256</a></li><li><a href="global.html#K">K</a></li><li><a href="global.html#Prepend8">Prepend8</a></li><li><a href="global.html#Prepend16">Prepend16</a></li><li><a href="global.html#Prepend24">Prepend24</a></li><li><a href="global.html#PRF256">PRF256</a></li><li><a href="global.html#randomBuffer">randomBuffer</a></li><li><a href="global.html#readUInt24">readUInt24</a></li><li><a href="global.html#RSA_PKCS1_PADDING">RSA_PKCS1_PADDING</a></li><li><a href="global.html#RSA_PKCS1_SHA256">RSA_PKCS1_SHA256</a></li><li><a href="global.html#SHA256">SHA256</a></li><li><a href="global.html#UInt8">UInt8</a></li><li><a href="global.html#UInt16">UInt16</a></li><li><a href="global.html#UInt24">UInt24</a></li><li><a href="global.html#VER12">VER12</a></li><li><a href="global.html#verifyCertificates">verifyCertificates</a></li></ul>
-</nav>
-
-<br class="clear">
-
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Thu Nov 14 2019 17:26:16 GMT+0800 (China Standard Time)
+    <img class="logo" src="img/toast-ui.png" style="">
+    <div class="footer-text">NHN Entertainment. Frontend Development Lab</div>
 </footer>
+<script>prettyPrint();</script>
+<script src="scripts/jquery.min.js"></script>
+<script src="scripts/tui-doc.js"></script>
+<script src="scripts/linenumber.js"></script>
 
-<script> prettyPrint(); </script>
-<script src="scripts/linenumber.js"> </script>
+    <script>
+        var id = 'package:undefined_sub'.replace(/"/g, '_');
+        var selectedApi = document.getElementById(id); // do not use jquery selector
+        var $selectedApi = $(selectedApi);
+
+        $selectedApi.removeClass('hidden');
+        $selectedApi.parent().find('.glyphicon').removeClass('glyphicon-plus').addClass('glyphicon-minus');
+        showLnbApi();
+    </script>
+
 </body>
 </html>

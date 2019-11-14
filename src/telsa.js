@@ -320,7 +320,7 @@ const createDecipher = (key, macKey) => {
 /**
  * convert a der certificate to pem format
  */
-const derToPem = der => 
+const derToPem = der =>
 `-----BEGIN CERTIFICATE-----
 ${der.toString('base64')}
 -----END CERTIFICATE-----`
@@ -335,38 +335,18 @@ const bash = (cmd, input, callback) => {
 }
 
 /**
- * Verify certificates
+ * verifies certificate chain using openssl
+ * @param {string} cert - certificate to be verified
+ * @param {string[]} intermediates - intermediate certificates
+ * @param {string} ca - root ca certificates
  */
-const verifyCertificates = (ca, ders, callback) => {
-  // convert DERs to PEMs
-  const pems = ders
-    .map(c => c.toString('base64'))
-    .map(c => `-----BEGIN CERTIFICATE-----\n${c}\n-----END CERTIFICATE-----`)
-
-  pems.forEach((pem, i) => fs.writeFileSync(`cert${i}.pem`, pem + '\n'))
-
-  // create ca bundle
-  const cert = pems.shift()
-  pems.reverse()
-  pems.unshift(ca)
-  const bundle = pems.join('\n')
-
-  const cmd = `openssl verify -CAfile <(echo -e "${bundle}")`
-  bash(cmd, cert, (err, stdout) => {
-    const token = stdout.toString().trim()
-    if (token === 'stdin: OK') {
-      callback(null)
-    } else {
-      callback(new Error('verification failed'))
-    }
-  })
-}
-
 const verifyCertificateChain = (cert, intermediates, ca, callback) => {
-  const cmd = [`openssl verify -CAfile <(echo -e "${ca}")`,
-    ...intermediates.map(i => `-untrusted <(echo -e "${i}")`)].join(' ')
+  const cmd = [
+    `openssl verify -CAfile <(echo -e "${ca}")`,
+    ...intermediates.map(i => `-untrusted <(echo -e "${i}")`)
+  ].join(' ')
 
-  bash(cmd, cert, (err, stdout) => {
+  bash(cmd, cert, (err, stdout, stderr) => {
     if (err) {
       callback(err)
     } else {
@@ -375,12 +355,16 @@ const verifyCertificateChain = (cert, intermediates, ca, callback) => {
       } else {
         callback(new Error('verification failed'))
       }
-    } 
-  })     
+    }
+  })
 }
 
-const extractPublicKey = (pem, callback) => 
-  bash('openssl x509 -noout -pubkey', pem, callback)
+/**
+ * extracts public key from the certificate
+ * @param {string} cert - certificate in PEM format
+ */
+const extractPublicKey = (cert, callback) =>
+  bash('openssl x509 -noout -pubkey', cert, callback)
 
 /**
  * @typedef {Object} Fragment
@@ -442,7 +426,7 @@ class HandshakeContext {
     this.clientWriteKey = keys.slice(40, 56)
     this.serverWriteKey = keys.slice(56, 72)
     this.iv = Array.from(keys.slice(72))
-      .reduce((sum, c, i) => 
+      .reduce((sum, c, i) =>
         (sum + BigInt(c) << (BigInt(8) * BigInt(i))), BigInt(0))
   }
 
@@ -814,23 +798,23 @@ class Telsa extends Duplex {
       throw new Error('invalid message length')
     }
 
-    const certs = []
+    // certificates are in der format and reversed order
+    const ders = []
     while (data.length) {
       if (data.length < 3 || readUInt24(data) + 3 > data.length) {
         throw new Error('invalid cert length')
       }
-      certs.push(shift(readUInt24(shift(3))))
+      ders.push(shift(readUInt24(shift(3))))
     }
 
-    // certs in der format and reversed order
-
+    const pems = ders.map(der => derToPem(der)).reverse()
+    const pem = pems.pop()
 
     let failed = false
     let key = ''
     let verified = false
 
-    // verify server certs
-    verifyCertificates(this.opts.ca, certs, err => {
+    verifyCertificateChain(pem, pems, this.opts.ca, err => {
       if (failed) return
       if (err) {
         failed = true
@@ -840,8 +824,6 @@ class Telsa extends Duplex {
         success()
       }
     })
-
-    let pem = derToPem(certs[0])
 
     extractPublicKey(pem, (err, stdout) => {
       if (failed) return
@@ -916,7 +898,7 @@ class Telsa extends Duplex {
     if (!data.equals(verifyData)) throw new Error('verified failed')
 
     console.log('server finished')
-    
+
     this.state = 'Established'
   }
 
@@ -996,12 +978,11 @@ class Telsa extends Duplex {
   sendClientCertificate () {
     if (this.hs.serverPublicKey &&
       this.hs.lastType() === HandshakeType.SERVER_HELLO_DONE) {
-
       this.sendHandshakeMessage(HandshakeType.CERTIFICATE,
         Prepend24(concat([
           ...this.opts.clientCertificates.map(c => Prepend24(c))])))
 
-      this.sendClientKeyExchange ()
+      this.sendClientKeyExchange()
     }
   }
 
@@ -1021,18 +1002,19 @@ class Telsa extends Duplex {
     if (typeof key === 'function') {
     } else {
       const sig = createSign('sha256').update(this.hs.tbs()).sign(key)
-      // send certificate verify
       this.sendHandshakeMessage(HandshakeType.CERTIFICATE_VERIFY,
         concat([RSA_PKCS1_SHA256, Prepend16(sig)]))
+
       // change cipher spec
       this.hs.deriveKeys()
       const { clientWriteKey, clientWriteMacKey, iv } = this.hs
       this.changeCipherSpec(clientWriteKey, clientWriteMacKey, iv)
+
       // send finished
       this.sendHandshakeMessage(HandshakeType.FINISHED,
         this.hs.clientVerifyData())
     }
-  } 
+  }
 
   /**
    * @return {boolean} false if buffer full

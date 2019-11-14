@@ -2,23 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: Telsa</title>
+    <title>Class: Telsa | Class: Telsa</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/bootstrap.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-jsdoc.css">
     <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link type="text/css" rel="stylesheet" href="styles/tui-doc.css">
+
+    
 </head>
-
 <body>
+<nav class="lnb" id="lnb">
+    <div class="logo" style="">
+        
+            <img src="img/toast-ui.png" width="100%" height="100%">
+        
+    </div>
+    <div class="title">
+        <h1><a href="index.html" class="link">Class: Telsa</a></h1>
+        
+    </div>
+    <div class="search-container" id="search-container">
+        <input type="text" placeholder="Search">
+        <ul></ul>
+    </div>
+    
+    <div class="lnb-api hidden"><h3>Classes</h3><ul><li><a href="HandshakeContext.html">HandshakeContext</a><button type="button" class="hidden toggle-subnav btn btn-link">  <span class="glyphicon glyphicon-plus"></span></button><div class="hidden" id="HandshakeContext_sub"></div></li><li><a href="Telsa.html">Telsa</a><button type="button" class="hidden toggle-subnav btn btn-link">  <span class="glyphicon glyphicon-plus"></span></button><div class="hidden" id="Telsa_sub"><div class="member-type">Members</div><ul class="inner"><li><a href="Telsa.html#blocked">blocked</a></li><li><a href="Telsa.html#cipher">cipher</a></li><li><a href="Telsa.html#decipher">decipher</a></li><li><a href="Telsa.html#fragment">fragment</a></li><li><a href="Telsa.html#hs">hs</a></li><li><a href="Telsa.html#incomming">incomming</a></li><li><a href="Telsa.html#opts">opts</a></li><li><a href="Telsa.html#socket">socket</a></li></ul><div class="member-type">Methods</div><ul class="inner"><li><a href="Telsa.html#_final">_final</a></li><li><a href="Telsa.html#_read">_read</a></li><li><a href="Telsa.html#_write">_write</a></li><li><a href="Telsa.html#handleAlert">handleAlert</a></li><li><a href="Telsa.html#handleApplicationData">handleApplicationData</a></li><li><a href="Telsa.html#handleCertificate">handleCertificate</a></li><li><a href="Telsa.html#handleCertificateRequest">handleCertificateRequest</a></li><li><a href="Telsa.html#handleChangeCipherSpec">handleChangeCipherSpec</a></li><li><a href="Telsa.html#handleHandshakeMessage">handleHandshakeMessage</a></li><li><a href="Telsa.html#handleServerHello">handleServerHello</a></li><li><a href="Telsa.html#handleServerHelloDone">handleServerHelloDone</a></li><li><a href="Telsa.html#handleSocketData">handleSocketData</a></li><li><a href="Telsa.html#maxFragmentLength">maxFragmentLength</a></li><li><a href="Telsa.html#readFragment">readFragment</a></li><li><a href="Telsa.html#readMessage">readMessage</a></li><li><a href="Telsa.html#readMessageFromFragment">readMessageFromFragment</a></li><li><a href="Telsa.html#send">send</a></li><li><a href="Telsa.html#sendAlert">sendAlert</a></li><li><a href="Telsa.html#sendApplicationData">sendApplicationData</a></li><li><a href="Telsa.html#sendChangeCipherSpec">sendChangeCipherSpec</a></li><li><a href="Telsa.html#sendClientCertificate">sendClientCertificate</a></li><li><a href="Telsa.html#sendClientHello">sendClientHello</a></li><li><a href="Telsa.html#sendHandshakeMessage">sendHandshakeMessage</a></li><li><a href="Telsa.html#shiftFragment">shiftFragment</a></li></ul></div></li></ul></div><div class="lnb-api hidden"><h3>Global</h3><ul><li><a href="global.html#AES_128_CBC_SHA">AES_128_CBC_SHA</a></li><li><a href="global.html#AlertDescription">AlertDescription</a></li><li><a href="global.html#bash">bash</a></li><li class="hidden"><a href="global.html#CipherFunction">CipherFunction</a></li><li><a href="global.html#ContentType">ContentType</a></li><li><a href="global.html#createCipher">createCipher</a></li><li><a href="global.html#createDecipher">createDecipher</a></li><li><a href="global.html#createSequenceNumber">createSequenceNumber</a></li><li class="hidden"><a href="global.html#DecipherFunction">DecipherFunction</a></li><li><a href="global.html#derToPem">derToPem</a></li><li><a href="global.html#extractPublicKey">extractPublicKey</a></li><li class="hidden"><a href="global.html#Fragment">Fragment</a></li><li><a href="global.html#HandshakeType">HandshakeType</a></li><li><a href="global.html#handshakeTypeName">handshakeTypeName</a></li><li><a href="global.html#HMAC1">HMAC1</a></li><li><a href="global.html#HMAC256">HMAC256</a></li><li><a href="global.html#K">K</a></li><li class="hidden"><a href="global.html#Message">Message</a></li><li><a href="global.html#Prepend8">Prepend8</a></li><li><a href="global.html#Prepend16">Prepend16</a></li><li><a href="global.html#Prepend24">Prepend24</a></li><li><a href="global.html#PRF256">PRF256</a></li><li><a href="global.html#randomBuffer">randomBuffer</a></li><li><a href="global.html#readUInt24">readUInt24</a></li><li><a href="global.html#RSA_PKCS1_PADDING">RSA_PKCS1_PADDING</a></li><li><a href="global.html#RSA_PKCS1_SHA256">RSA_PKCS1_SHA256</a></li><li class="hidden"><a href="global.html#SequenceNumberFunction">SequenceNumberFunction</a></li><li><a href="global.html#SHA256">SHA256</a></li><li><a href="global.html#UInt8">UInt8</a></li><li><a href="global.html#UInt16">UInt16</a></li><li><a href="global.html#UInt24">UInt24</a></li><li><a href="global.html#VER12">VER12</a></li><li><a href="global.html#verifyCertificateChain">verifyCertificateChain</a></li></ul></div>
+</nav>
+<div id="resizer"></div>
 
-<div id="main">
-
-    <h1 class="page-title">Class: Telsa</h1>
-
+<div class="main" id="main">
     
 
 
@@ -30,64 +48,74 @@
     
         <h2><span class="attribs"><span class="type-signature"></span></span>Telsa<span class="signature">(opts)</span><span class="type-signature"></span></h2>
         
-            <div class="class-description">Telsa is a TLS 1.2 client. Internally, there are four states:
-
-#### `Connecting`
-
-socket is connecting.
-
-- `_write` is blocked.
-- `_final` is allowed and triggers a transition to `Disconnected`.
-- `_read` returns nothing.
-- socket error triggers a transition to `Disconnected`; if there is `bufferredWrite`, error is passed via `callback`, otherwise, it is emitted.
-
-#### `Handshaking`
-
-- `_write` is blocked.
-- `_final` triggers a transition to `Disconnected`. The callback is instantly invoked.
-- socket error or message error triggers a transitoin to `Disconnected`.
-
-#### `Established`
-- `_write` is passed to socket connection. If blocking, the `callback` is blocked to next `Drain` event.
-- `_final` triggers a transition to `Disconnected`; the callback is passed to underlying `socket.end()`.
-- socket error or message error triggers a transitoin to `Disconnected`.
-
-#### `Disconnected`
-- `_write` returns error.
-- `_final` succeeds anyway.
-- `_read` returns nothing.</div>
+            <div class="class-description"><p>Telsa is a TLS 1.2 client. Internally, there are four states:</p>
+<h4><code>Connecting</code></h4>
+<p>socket is connecting.</p>
+<ul>
+<li><code>_write</code> is blocked.</li>
+<li><code>_final</code> is allowed and triggers a transition to <code>Disconnected</code>.</li>
+<li><code>_read</code> returns nothing.</li>
+<li>socket error triggers a transition to <code>Disconnected</code>; if there is <code>bufferredWrite</code>, error is passed via <code>callback</code>, otherwise, it is emitted.</li>
+</ul>
+<h4><code>Handshaking</code></h4>
+<ul>
+<li><code>_write</code> is blocked.</li>
+<li><code>_final</code> triggers a transition to <code>Disconnected</code>. The callback is instantly invoked.</li>
+<li>socket error or message error triggers a transitoin to <code>Disconnected</code>.</li>
+</ul>
+<h4><code>Established</code></h4>
+<ul>
+<li><code>_write</code> is passed to socket connection. If blocking, the <code>callback</code> is blocked to next <code>Drain</code> event.</li>
+<li><code>_final</code> triggers a transition to <code>Disconnected</code>; the callback is passed to underlying <code>socket.end()</code>.</li>
+<li>socket error or message error triggers a transitoin to <code>Disconnected</code>.</li>
+</ul>
+<h4><code>Disconnected</code></h4>
+<ul>
+<li><code>_write</code> returns error.</li>
+<li><code>_final</code> succeeds anyway.</li>
+<li><code>_read</code> returns nothing.</li>
+</ul></div>
         
     
 </header>
 
 <article>
-    <div class="container-overview">
     
+        <div class="container-overview">
         
+            
+
+<dt>
+    
+        <h4 class="name" id="Telsa">
+            
+                new <span class="type-signature"></span>Telsa<span class="signature">(opts)</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line474">line 474</a></code>
+            </div>
+            
+        </h4>
+
+        
+    
+</dt>
+<dd>
 
     
-    <h2>Constructor</h2>
-    
 
-    
-    <h4 class="name" id="Telsa"><span class="type-signature"></span>new Telsa<span class="signature">(opts)</span><span class="type-signature"></span></h4>
     
 
     
 
-
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
     
 
+    
+    <div class="container-params">
+        <h5>Parameters:</h5>
+        
 <table class="params">
     <thead>
     <tr>
@@ -133,9 +161,22 @@ socket is connecting.
     </tbody>
 </table>
 
+    </div>
+    
 
+    
 
+    
 
+    
+
+    
+
+    
+
+    
+
+    
 
 
 <dl class="details">
@@ -165,13 +206,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line474">line 474</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -179,26 +213,13 @@ socket is connecting.
 </dl>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     
-    </div>
+
+</dd>
+
+        
+        </div>
+    
 
     
 
@@ -215,37 +236,52 @@ socket is connecting.
     
         <h3 class="subsection-title">Members</h3>
 
-        
+        <dl>
             
-<h4 class="name" id="blocked"><span class="type-signature"></span>blocked<span class="type-signature"> :object|function</span></h4>
+
+<dt>
+<h4 class="name" id="blocked">
+    <span class="type-signature"></span>blocked<span class="type-signature"> :object|function</span>
+    
+    <div class="container-source members">
+        <code><a href="telsa.js.html">telsa.js</a></code>,
+        <code><a href="telsa.js.html#line487">line 487</a></code>
+    </div>
+    
+</h4>
 
 
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>blocked <code>_write</code> operation, also the write path state</p>
+<ul>
+<li><code>null</code> if no blocked <code>_write</code></li>
+<li><code>{ chunk, encoding, callback }</code> if a <code>_write</code> is blocked</li>
+<li><code>callback</code> if waiting for <code>drain</code> event</li>
+</ul>
+    </div>
+    
 
-
-<div class="description">
-    blocked `_write` operation, also the write path state
-- `null` if no blocked `_write`
-- `{ chunk, encoding, callback }` if a `_write` is blocked
-- `callback` if waiting for `drain` event
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    <!--
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type">object</span>
 |
 
 <span class="param-type">function</span>
 
 
-        </li>
-    </ul>
+            </li>
+        </ul>
+    
+    -->
 
-
-
+    
 
 
 <dl class="details">
@@ -275,13 +311,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line487">line 487</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -289,31 +318,45 @@ socket is connecting.
 </dl>
 
 
+    
 
-
-
+    
+</dd>
 
         
             
-<h4 class="name" id="cipher"><span class="type-signature"></span>cipher<span class="type-signature"> :<a href="global.html#CipherFunction">CipherFunction</a></span></h4>
+
+<dt>
+<h4 class="name" id="cipher">
+    <span class="type-signature"></span>cipher<span class="type-signature"> :<a href="global.html#CipherFunction">CipherFunction</a></span>
+    
+    <div class="container-source members">
+        <code><a href="telsa.js.html">telsa.js</a></code>,
+        <code><a href="telsa.js.html#line519">line 519</a></code>
+    </div>
+    
+</h4>
 
 
+</dt>
+<dd>
+    
 
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    <!--
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type"><a href="global.html#CipherFunction">CipherFunction</a></span>
 
 
-        </li>
-    </ul>
+            </li>
+        </ul>
+    
+    -->
 
-
-
+    
 
 
 <dl class="details">
@@ -343,13 +386,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line519">line 519</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -357,31 +393,45 @@ socket is connecting.
 </dl>
 
 
+    
 
-
-
+    
+</dd>
 
         
             
-<h4 class="name" id="decipher"><span class="type-signature"></span>decipher<span class="type-signature"> :<a href="global.html#DecipherFunction">DecipherFunction</a></span></h4>
+
+<dt>
+<h4 class="name" id="decipher">
+    <span class="type-signature"></span>decipher<span class="type-signature"> :<a href="global.html#DecipherFunction">DecipherFunction</a></span>
+    
+    <div class="container-source members">
+        <code><a href="telsa.js.html">telsa.js</a></code>,
+        <code><a href="telsa.js.html#line524">line 524</a></code>
+    </div>
+    
+</h4>
 
 
+</dt>
+<dd>
+    
 
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    <!--
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type"><a href="global.html#DecipherFunction">DecipherFunction</a></span>
 
 
-        </li>
-    </ul>
+            </li>
+        </ul>
+    
+    -->
 
-
-
+    
 
 
 <dl class="details">
@@ -411,13 +461,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line524">line 524</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -425,35 +468,49 @@ socket is connecting.
 </dl>
 
 
+    
 
-
-
+    
+</dd>
 
         
             
-<h4 class="name" id="fragment"><span class="type-signature"></span>fragment<span class="type-signature"> :<a href="global.html#Fragment">Fragment</a></span></h4>
+
+<dt>
+<h4 class="name" id="fragment">
+    <span class="type-signature"></span>fragment<span class="type-signature"> :<a href="global.html#Fragment">Fragment</a></span>
+    
+    <div class="container-source members">
+        <code><a href="telsa.js.html">telsa.js</a></code>,
+        <code><a href="telsa.js.html#line508">line 508</a></code>
+    </div>
+    
+</h4>
 
 
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>current fragment, contains 0, 1 or more records of the same type.</p>
+    </div>
+    
 
-
-<div class="description">
-    current fragment, contains 0, 1 or more records of the same type.
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    <!--
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type"><a href="global.html#Fragment">Fragment</a></span>
 
 
-        </li>
-    </ul>
+            </li>
+        </ul>
+    
+    -->
 
-
-
+    
 
 
 <dl class="details">
@@ -483,13 +540,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line508">line 508</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -497,35 +547,49 @@ socket is connecting.
 </dl>
 
 
+    
 
-
-
+    
+</dd>
 
         
             
-<h4 class="name" id="hs"><span class="type-signature"></span>hs<span class="type-signature"> :<a href="HandshakeContext.html">HandshakeContext</a></span></h4>
+
+<dt>
+<h4 class="name" id="hs">
+    <span class="type-signature"></span>hs<span class="type-signature"> :<a href="HandshakeContext.html">HandshakeContext</a></span>
+    
+    <div class="container-source members">
+        <code><a href="telsa.js.html">telsa.js</a></code>,
+        <code><a href="telsa.js.html#line514">line 514</a></code>
+    </div>
+    
+</h4>
 
 
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>handshake context</p>
+    </div>
+    
 
-
-<div class="description">
-    handshake context
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    <!--
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type"><a href="HandshakeContext.html">HandshakeContext</a></span>
 
 
-        </li>
-    </ul>
+            </li>
+        </ul>
+    
+    -->
 
-
-
+    
 
 
 <dl class="details">
@@ -555,13 +619,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line514">line 514</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -569,35 +626,49 @@ socket is connecting.
 </dl>
 
 
+    
 
-
-
+    
+</dd>
 
         
             
-<h4 class="name" id="incomming"><span class="type-signature"></span>incomming<span class="type-signature"> :Buffer</span></h4>
+
+<dt>
+<h4 class="name" id="incomming">
+    <span class="type-signature"></span>incomming<span class="type-signature"> :Buffer</span>
+    
+    <div class="container-source members">
+        <code><a href="telsa.js.html">telsa.js</a></code>,
+        <code><a href="telsa.js.html#line502">line 502</a></code>
+    </div>
+    
+</h4>
 
 
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>incomming data buffer, may contain fragmented records.</p>
+    </div>
+    
 
-
-<div class="description">
-    incomming data buffer, may contain fragmented records.
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    <!--
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type">Buffer</span>
 
 
-        </li>
-    </ul>
+            </li>
+        </ul>
+    
+    -->
 
-
-
+    
 
 
 <dl class="details">
@@ -627,13 +698,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line502">line 502</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -641,25 +705,39 @@ socket is connecting.
 </dl>
 
 
+    
 
-
-
+    
+</dd>
 
         
             
-<h4 class="name" id="opts"><span class="type-signature"></span>opts<span class="type-signature"></span></h4>
+
+<dt>
+<h4 class="name" id="opts">
+    <span class="type-signature"></span>opts<span class="type-signature"></span>
+    
+    <div class="container-source members">
+        <code><a href="telsa.js.html">telsa.js</a></code>,
+        <code><a href="telsa.js.html#line478">line 478</a></code>
+    </div>
+    
+</h4>
 
 
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>options</p>
+    </div>
+    
 
+    <!--
+    
+    -->
 
-<div class="description">
-    options
-</div>
-
-
-
-
-
+    
 
 
 <dl class="details">
@@ -689,13 +767,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line478">line 478</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -703,35 +774,49 @@ socket is connecting.
 </dl>
 
 
+    
 
-
-
+    
+</dd>
 
         
             
-<h4 class="name" id="socket"><span class="type-signature"></span>socket<span class="type-signature"> :net.Socket</span></h4>
+
+<dt>
+<h4 class="name" id="socket">
+    <span class="type-signature"></span>socket<span class="type-signature"> :net.Socket</span>
+    
+    <div class="container-source members">
+        <code><a href="telsa.js.html">telsa.js</a></code>,
+        <code><a href="telsa.js.html#line493">line 493</a></code>
+    </div>
+    
+</h4>
 
 
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>tcp connection</p>
+    </div>
+    
 
-
-<div class="description">
-    tcp connection
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
+    <!--
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
 <span class="param-type">net.Socket</span>
 
 
-        </li>
-    </ul>
+            </li>
+        </ul>
+    
+    -->
 
-
-
+    
 
 
 <dl class="details">
@@ -761,13 +846,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line493">line 493</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -775,43 +853,66 @@ socket is connecting.
 </dl>
 
 
+    
 
+    
+</dd>
 
-
-
-        
+        </dl>
     
 
     
         <h3 class="subsection-title">Methods</h3>
 
-        
+        <dl>
+                
+
+<dt>
+    
+        <h4 class="name" id="_final">
             
+                <span class="type-signature"></span>_final<span class="signature">()</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line1045">line 1045</a></code>
+            </div>
+            
+        </h4>
+
+        
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>implement Duplex _final</p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="_final"><span class="type-signature"></span>_final<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
     
 
     
 
+    
 
+    
 
-<div class="description">
-    implement Duplex _final
-</div>
+    
 
+    
 
-
-
-
-
-
-
-
-
-
+    
 
 
 <dl class="details">
@@ -841,13 +942,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1003">line 1003</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -855,51 +949,59 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<dt>
+    
+        <h4 class="name" id="_read">
+            
+                <span class="type-signature"></span>_read<span class="signature">()</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line1055">line 1055</a></code>
+            </div>
+            
+        </h4>
 
         
-            
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>implement Duplex _read</p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="_read"><span class="type-signature"></span>_read<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
     
 
     
 
+    
 
+    
 
-<div class="description">
-    implement Duplex _read
-</div>
+    
 
+    
 
-
-
-
-
-
-
-
-
-
+    
 
 
 <dl class="details">
@@ -929,13 +1031,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1013">line 1013</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -943,51 +1038,59 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<dt>
+    
+        <h4 class="name" id="_write">
+            
+                <span class="type-signature"></span>_write<span class="signature">()</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line1028">line 1028</a></code>
+            </div>
+            
+        </h4>
 
         
-            
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>implements <code>Duplex</code> <code>_write</code></p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="_write"><span class="type-signature"></span>_write<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
     
 
     
 
+    
 
+    
 
-<div class="description">
-    implements `Duplex` `_write`
-</div>
+    
 
+    
 
-
-
-
-
-
-
-
-
-
+    
 
 
 <dl class="details">
@@ -1017,13 +1120,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line986">line 986</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -1031,52 +1127,48 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<dt>
+    
+        <h4 class="name" id="handleAlert">
+            
+                <span class="type-signature"></span>handleAlert<span class="signature">(data)</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line700">line 700</a></code>
+            </div>
+            
+        </h4>
 
         
-            
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>handle alert message, all warnings are bypassed except <code>close_notify</code></p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="handleAlert"><span class="type-signature"></span>handleAlert<span class="signature">(data)</span><span class="type-signature"></span></h4>
-    
 
     
-
-
-
-<div class="description">
-    handle alert message, all warnings are bypassed except `close_notify`
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
+    <div class="container-params">
+        <h5>Parameters:</h5>
+        
 <table class="params">
     <thead>
     <tr>
@@ -1122,13 +1214,7 @@ socket is connecting.
     </tbody>
 </table>
 
-
-
-
-
-
-<dl class="details">
-
+    </div>
     
 
     
@@ -1144,75 +1230,6 @@ socket is connecting.
     
 
     
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line671">line 671</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="handleApplicationData"><span class="type-signature"></span>handleApplicationData<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    handle application data
-</div>
-
-
-
-
-
-
-
-
-
-
-
 
 
 <dl class="details">
@@ -1242,13 +1259,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line876">line 876</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -1256,51 +1266,59 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<dt>
+    
+        <h4 class="name" id="handleApplicationData">
+            
+                <span class="type-signature"></span>handleApplicationData<span class="signature">()</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line918">line 918</a></code>
+            </div>
+            
+        </h4>
 
         
-            
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>handle application data</p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="handleChangeCipherSpec"><span class="type-signature"></span>handleChangeCipherSpec<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
     
 
     
 
+    
 
+    
 
-<div class="description">
-    handle change cipher spec
-</div>
+    
 
+    
 
-
-
-
-
-
-
-
-
-
+    
 
 
 <dl class="details">
@@ -1330,10 +1348,95 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line866">line 866</a>
-    </li></ul></dd>
+
+    
+
+    
+</dl>
+
+
+    
+
+</dd>
+
+            
+                
+
+<dt>
+    
+        <h4 class="name" id="handleCertificate">
+            
+                <span class="type-signature"></span>handleCertificate<span class="signature">()</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line794">line 794</a></code>
+            </div>
+            
+        </h4>
+
+        
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <pre class="prettyprint source"><code>struct {
+  ASN.1Cert certificate_list&lt;0..2^24-1>;
+} Certificate;
+</code></pre>
+    </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
     
 
     
@@ -1344,52 +1447,232 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<dt>
+    
+        <h4 class="name" id="handleCertificateRequest">
+            
+                <span class="type-signature"></span>handleCertificateRequest<span class="signature">()</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line861">line 861</a></code>
+            </div>
+            
+        </h4>
 
         
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <pre class="prettyprint source"><code>struct {
+  ClientCertificateType certificate_types&lt;1..2^8-1>;
+  SignatureAndHashAlgorithm
+    supported_signature_algorithms&lt;2^16-1>;
+  DistinguishedName certificate_authorities&lt;0..2^16-1>;
+} CertificateRequest;
+</code></pre>
+    </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+    
+
+</dd>
+
             
+                
+
+<dt>
+    
+        <h4 class="name" id="handleChangeCipherSpec">
+            
+                <span class="type-signature"></span>handleChangeCipherSpec<span class="signature">()</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line908">line 908</a></code>
+            </div>
+            
+        </h4>
+
+        
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>handle change cipher spec</p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="handleHandshakeMessage"><span class="type-signature"></span>handleHandshakeMessage<span class="signature">(msg)</span><span class="type-signature"></span></h4>
+
+    
+
     
 
     
 
-
-
-<div class="description">
-    handle handshake message
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
     
 
+    
+
+    
+
+    
+
+    
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+    
+
+</dd>
+
+            
+                
+
+<dt>
+    
+        <h4 class="name" id="handleHandshakeMessage">
+            
+                <span class="type-signature"></span>handleHandshakeMessage<span class="signature">(msg)</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line709">line 709</a></code>
+            </div>
+            
+        </h4>
+
+        
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>handle handshake message</p>
+    </div>
+    
+
+    
+
+    
+
+    
+
+    
+    <div class="container-params">
+        <h5>Parameters:</h5>
+        
 <table class="params">
     <thead>
     <tr>
@@ -1428,16 +1711,29 @@ socket is connecting.
 
             
 
-            <td class="description last">full message data, including type, length, and body</td>
+            <td class="description last"><p>full message data, including type, length, and body</p></td>
         </tr>
 
     
     </tbody>
 </table>
 
+    </div>
+    
 
+    
 
+    
 
+    
+
+    
+
+    
+
+    
+
+    
 
 
 <dl class="details">
@@ -1467,13 +1763,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line680">line 680</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -1481,51 +1770,72 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<dt>
+    
+        <h4 class="name" id="handleServerHello">
+            
+                <span class="type-signature"></span>handleServerHello<span class="signature">()</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line755">line 755</a></code>
+            </div>
+            
+        </h4>
 
         
-            
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <pre class="prettyprint source"><code>struct {
+  ProtocolVersion server_version;
+  Random random;
+  SessionID session_id;
+  CipherSuite cipher_suite;
+  CompressionMethod compression_method;
+  select (extensions_present) {
+    case false:
+      struct {};
+    case true:
+      Extension extensions&lt;0..2^16-1>;
+  };
+} ServerHello;
+</code></pre>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="handleServerCertificates"><span class="type-signature"></span>handleServerCertificates<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
     
 
     
 
+    
 
+    
 
-<div class="description">
-    Verifies server certificates and extract public key
-</div>
+    
 
+    
 
-
-
-
-
-
-
-
-
-
+    
 
 
 <dl class="details">
@@ -1555,10 +1865,92 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line969">line 969</a>
-    </li></ul></dd>
+
+    
+
+    
+</dl>
+
+
+    
+
+</dd>
+
+            
+                
+
+<dt>
+    
+        <h4 class="name" id="handleServerHelloDone">
+            
+                <span class="type-signature"></span>handleServerHelloDone<span class="signature">()</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line891">line 891</a></code>
+            </div>
+            
+        </h4>
+
+        
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>struct { } ServerHelloDone;</p>
+    </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
     
 
     
@@ -1569,52 +1961,48 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<dt>
+    
+        <h4 class="name" id="handleSocketData">
+            
+                <span class="type-signature"></span>handleSocketData<span class="signature">(data)</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line671">line 671</a></code>
+            </div>
+            
+        </h4>
 
         
-            
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>handle socket data</p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="handleSocketData"><span class="type-signature"></span>handleSocketData<span class="signature">(data)</span><span class="type-signature"></span></h4>
-    
 
     
-
-
-
-<div class="description">
-    handle socket data
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
+    <div class="container-params">
+        <h5>Parameters:</h5>
+        
 <table class="params">
     <thead>
     <tr>
@@ -1653,16 +2041,29 @@ socket is connecting.
 
             
 
-            <td class="description last">socket data</td>
+            <td class="description last"><p>socket data</p></td>
         </tr>
 
     
     </tbody>
 </table>
 
+    </div>
+    
 
+    
 
+    
 
+    
+
+    
+
+    
+
+    
+
+    
 
 
 <dl class="details">
@@ -1692,13 +2093,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line888">line 888</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -1706,145 +2100,71 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
             
+                
 
+<dt>
     
-
-    
-    <h4 class="name" id="maxFragmentLength"><span class="type-signature"></span>maxFragmentLength<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line547">line 547</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    max fragment length
-</div>
-
-
-
-    
-
-
-
-
-
-        
+        <h4 class="name" id="maxFragmentLength">
             
+                <span class="type-signature"></span>maxFragmentLength<span class="signature">()</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line547">line 547</a></code>
+            </div>
+            
+        </h4>
+
+        
+    
+</dt>
+<dd>
 
     
 
     
-    <h4 class="name" id="readFragment"><span class="type-signature"></span>readFragment<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="global.html#Fragment">Fragment</a>}</span></h4>
+
+    
+
     
 
     
 
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <div class="container-returns">
+        <h5>Returns:</h5>
+        
+                
 
 
-<div class="description">
-    read a record out of incomming data buffer
-</div>
+
+
+- <p>max fragment length</p>
 
 
 
 
+            
+    </div>
+    
 
-
-
-
-
-
-
+    
 
 
 <dl class="details">
@@ -1874,13 +2194,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line559">line 559</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -1888,73 +2201,80 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
+<dt>
+    
+        <h4 class="name" id="readFragment">
+            
+                <span class="type-signature"></span>readFragment<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="global.html#Fragment">Fragment</a>}</span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line559">line 559</a></code>
+            </div>
+            
+        </h4>
 
         
-<div class="param-desc">
-    the record type and payload
-</div>
+    
+</dt>
+<dd>
 
+    
+    <div class="description">
+        <p>read a record out of incomming data buffer</p>
+    </div>
+    
 
+    
 
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <div class="container-returns">
+        <h5>Returns:</h5>
         
+                
+
+
+
 <span class="param-type"><a href="global.html#Fragment">Fragment</a></span>
 
 
-    </dd>
-</dl>
-
-    
 
 
 
+- <p>the record type and payload</p>
 
 
-        
+
+
             
-
+    </div>
     
 
     
-    <h4 class="name" id="readMessage"><span class="type-signature"></span>readMessage<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="global.html#Message">Message</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    read a message
-</div>
-
-
-
-
-
-
-
-
-
-
-
 
 
 <dl class="details">
@@ -1984,13 +2304,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line638">line 638</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -1998,69 +2311,78 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
+<dt>
+    
+        <h4 class="name" id="readMessage">
+            
+                <span class="type-signature"></span>readMessage<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="global.html#Message">Message</a>}</span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line638">line 638</a></code>
+            </div>
+            
+        </h4>
 
         
+    
+</dt>
+<dd>
 
+    
+    <div class="description">
+        <p>read a message</p>
+    </div>
+    
 
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <div class="container-returns">
+        <h5>Returns:</h5>
         
+                
+
+
+
 <span class="param-type"><a href="global.html#Message">Message</a></span>
 
 
-    </dd>
-</dl>
-
-    
 
 
 
 
 
-        
+
             
-
+    </div>
     
 
     
-    <h4 class="name" id="readMessageFromFragment"><span class="type-signature"></span>readMessageFromFragment<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="global.html#Message">Message</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    read a message from current fragment
-</div>
-
-
-
-
-
-
-
-
-
-
-
 
 
 <dl class="details">
@@ -2090,13 +2412,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line614">line 614</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -2104,65 +2419,78 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
+<dt>
+    
+        <h4 class="name" id="readMessageFromFragment">
+            
+                <span class="type-signature"></span>readMessageFromFragment<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="global.html#Message">Message</a>}</span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line614">line 614</a></code>
+            </div>
+            
+        </h4>
 
         
+    
+</dt>
+<dd>
 
+    
+    <div class="description">
+        <p>read a message from current fragment</p>
+    </div>
+    
 
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <div class="container-returns">
+        <h5>Returns:</h5>
         
+                
+
+
+
 <span class="param-type"><a href="global.html#Message">Message</a></span>
 
 
-    </dd>
-</dl>
-
-    
 
 
 
 
 
-        
+
             
-
+    </div>
     
 
     
-    <h4 class="name" id="send"><span class="type-signature"></span>send<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 <dl class="details">
@@ -2192,13 +2520,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line917">line 917</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -2206,47 +2527,132 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<dt>
+    
+        <h4 class="name" id="send">
+            
+                <span class="type-signature"></span>send<span class="signature">(type, data)</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line931">line 931</a></code>
+            </div>
+            
+        </h4>
 
         
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>record layer send data</p>
+    </div>
+    
+
+    
+
+    
+
+    
+
+    
+    <div class="container-params">
+        <h5>Parameters:</h5>
+        
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>type</code></td>
             
 
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>content type</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>data</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Buffer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>content</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    </div>
     
 
     
-    <h4 class="name" id="sendAlert"><span class="type-signature"></span>sendAlert<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+
+    
+
     
 
     
 
+    
 
+    
 
-
-
-
-
-
-
-
-
-
-
+    
 
 
 <dl class="details">
@@ -2276,13 +2682,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line926">line 926</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -2290,69 +2689,76 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
+<dt>
+    
+        <h4 class="name" id="sendAlert">
+            
+                <span class="type-signature"></span>sendAlert<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line940">line 940</a></code>
+            </div>
+            
+        </h4>
 
         
-<div class="param-desc">
-    false if buffer full
-</div>
+    
+</dt>
+<dd>
 
+    
 
+    
 
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <div class="container-returns">
+        <h5>Returns:</h5>
         
+                
+
+
+
 <span class="param-type">boolean</span>
 
 
-    </dd>
-</dl>
-
-    
 
 
 
+- <p>false if buffer full</p>
 
 
-        
+
+
             
-
+    </div>
     
 
     
-    <h4 class="name" id="sendApplicationData"><span class="type-signature"></span>sendApplicationData<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span></h4>
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 <dl class="details">
@@ -2382,13 +2788,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line962">line 962</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -2396,69 +2795,76 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
+<dt>
+    
+        <h4 class="name" id="sendApplicationData">
+            
+                <span class="type-signature"></span>sendApplicationData<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line1021">line 1021</a></code>
+            </div>
+            
+        </h4>
 
         
-<div class="param-desc">
-    false if buffer full
-</div>
+    
+</dt>
+<dd>
 
+    
 
+    
 
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <div class="container-returns">
+        <h5>Returns:</h5>
         
+                
+
+
+
 <span class="param-type">boolean</span>
 
 
-    </dd>
-</dl>
-
-    
 
 
 
+- <p>false if buffer full</p>
 
 
-        
+
+
             
-
+    </div>
     
 
     
-    <h4 class="name" id="sendChangeCipherSpec"><span class="type-signature"></span>sendChangeCipherSpec<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span></h4>
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 <dl class="details">
@@ -2488,13 +2894,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line932">line 932</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -2502,73 +2901,76 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
+<dt>
+    
+        <h4 class="name" id="sendChangeCipherSpec">
+            
+                <span class="type-signature"></span>sendChangeCipherSpec<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line946">line 946</a></code>
+            </div>
+            
+        </h4>
 
         
-<div class="param-desc">
-    false if buffer full
-</div>
+    
+</dt>
+<dd>
 
+    
 
+    
 
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <div class="container-returns">
+        <h5>Returns:</h5>
         
+                
+
+
+
 <span class="param-type">boolean</span>
 
 
-    </dd>
-</dl>
-
-    
 
 
 
+- <p>false if buffer full</p>
 
 
-        
+
+
             
-
+    </div>
     
 
     
-    <h4 class="name" id="sendClientHello"><span class="type-signature"></span>sendClientHello<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    send ClientHello
-</div>
-
-
-
-
-
-
-
-
-
-
-
 
 
 <dl class="details">
@@ -2598,13 +3000,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line949">line 949</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -2612,47 +3007,61 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<dt>
+    
+        <h4 class="name" id="sendClientCertificate">
+            
+                <span class="type-signature"></span>sendClientCertificate<span class="signature">()</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line978">line 978</a></code>
+            </div>
+            
+        </h4>
 
         
-            
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>send client certificate if ServerHelloDone and
+server public key available, which also means server certificates
+verified</p>
+    </div>
+    
+
+    
 
     
 
     
-    <h4 class="name" id="sendHandshakeMessage"><span class="type-signature"></span>sendHandshakeMessage<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+
+    
+
     
 
     
 
+    
 
+    
 
+    
 
+    
 
-
-
-
-
-
-
-
-
+    
 
 
 <dl class="details">
@@ -2682,10 +3091,92 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line939">line 939</a>
-    </li></ul></dd>
+
+    
+
+    
+</dl>
+
+
+    
+
+</dd>
+
+            
+                
+
+<dt>
+    
+        <h4 class="name" id="sendClientHello">
+            
+                <span class="type-signature"></span>sendClientHello<span class="signature">()</span><span class="type-signature"></span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line963">line 963</a></code>
+            </div>
+            
+        </h4>
+
+        
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>send ClientHello</p>
+    </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
     
 
     
@@ -2696,73 +3187,76 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
+<dt>
+    
+        <h4 class="name" id="sendHandshakeMessage">
+            
+                <span class="type-signature"></span>sendHandshakeMessage<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line953">line 953</a></code>
+            </div>
+            
+        </h4>
 
         
-<div class="param-desc">
-    false if buffer full
-</div>
+    
+</dt>
+<dd>
 
+    
 
+    
 
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <div class="container-returns">
+        <h5>Returns:</h5>
         
+                
+
+
+
 <span class="param-type">boolean</span>
 
 
-    </dd>
-</dl>
-
-    
 
 
 
+- <p>false if buffer full</p>
 
 
-        
+
+
             
-
+    </div>
     
 
     
-    <h4 class="name" id="shiftFragment"><span class="type-signature"></span>shiftFragment<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="global.html#Fragment">Fragment</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    shift data chunk with given size from current fragment
-</div>
-
-
-
-
-
-
-
-
-
-
-
 
 
 <dl class="details">
@@ -2792,13 +3286,6 @@ socket is connecting.
     
 
     
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line593">line 593</a>
-    </li></ul></dd>
-    
-
-    
 
     
 
@@ -2806,43 +3293,119 @@ socket is connecting.
 </dl>
 
 
+    
 
+</dd>
 
+            
+                
 
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
+<dt>
+    
+        <h4 class="name" id="shiftFragment">
+            
+                <span class="type-signature"></span>shiftFragment<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="global.html#Fragment">Fragment</a>}</span>
+                
+            
+            <div class="container-source members">
+                <code><a href="telsa.js.html">telsa.js</a></code>,
+                <code><a href="telsa.js.html#line593">line 593</a></code>
+            </div>
+            
+        </h4>
 
         
+    
+</dt>
+<dd>
 
+    
+    <div class="description">
+        <p>shift data chunk with given size from current fragment</p>
+    </div>
+    
 
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <div class="container-returns">
+        <h5>Returns:</h5>
         
+                
+
+
+
 <span class="param-type"><a href="global.html#Fragment">Fragment</a></span>
 
 
-    </dd>
-</dl>
+
+
+
+
+
+
+            
+    </div>
+    
 
     
 
 
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
 
 
+    
 
-        
+</dd>
+
+            </dl>
     
 
     
@@ -2857,17 +3420,24 @@ socket is connecting.
 
 </div>
 
-<nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="HandshakeContext.html">HandshakeContext</a></li><li><a href="Telsa.html">Telsa</a></li></ul><h3>Global</h3><ul><li><a href="global.html#AES_128_CBC_SHA">AES_128_CBC_SHA</a></li><li><a href="global.html#AlertDescription">AlertDescription</a></li><li><a href="global.html#bash">bash</a></li><li><a href="global.html#ContentType">ContentType</a></li><li><a href="global.html#createCipher">createCipher</a></li><li><a href="global.html#createDecipher">createDecipher</a></li><li><a href="global.html#createSequenceNumber">createSequenceNumber</a></li><li><a href="global.html#derToPem">derToPem</a></li><li><a href="global.html#HandshakeType">HandshakeType</a></li><li><a href="global.html#handshakeTypeName">handshakeTypeName</a></li><li><a href="global.html#HMAC1">HMAC1</a></li><li><a href="global.html#HMAC256">HMAC256</a></li><li><a href="global.html#K">K</a></li><li><a href="global.html#Prepend8">Prepend8</a></li><li><a href="global.html#Prepend16">Prepend16</a></li><li><a href="global.html#Prepend24">Prepend24</a></li><li><a href="global.html#PRF256">PRF256</a></li><li><a href="global.html#randomBuffer">randomBuffer</a></li><li><a href="global.html#readUInt24">readUInt24</a></li><li><a href="global.html#RSA_PKCS1_PADDING">RSA_PKCS1_PADDING</a></li><li><a href="global.html#RSA_PKCS1_SHA256">RSA_PKCS1_SHA256</a></li><li><a href="global.html#SHA256">SHA256</a></li><li><a href="global.html#UInt8">UInt8</a></li><li><a href="global.html#UInt16">UInt16</a></li><li><a href="global.html#UInt24">UInt24</a></li><li><a href="global.html#VER12">VER12</a></li><li><a href="global.html#verifyCertificates">verifyCertificates</a></li></ul>
-</nav>
-
-<br class="clear">
-
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Thu Nov 14 2019 17:26:16 GMT+0800 (China Standard Time)
+    <img class="logo" src="img/toast-ui.png" style="">
+    <div class="footer-text">NHN Entertainment. Frontend Development Lab</div>
 </footer>
+<script>prettyPrint();</script>
+<script src="scripts/jquery.min.js"></script>
+<script src="scripts/tui-doc.js"></script>
+<script src="scripts/linenumber.js"></script>
 
-<script> prettyPrint(); </script>
-<script src="scripts/linenumber.js"> </script>
+    <script>
+        var id = 'Telsa_sub'.replace(/"/g, '_');
+        var selectedApi = document.getElementById(id); // do not use jquery selector
+        var $selectedApi = $(selectedApi);
+
+        $selectedApi.removeClass('hidden');
+        $selectedApi.parent().find('.glyphicon').removeClass('glyphicon-plus').addClass('glyphicon-minus');
+        showLnbApi();
+    </script>
+
 </body>
 </html>
