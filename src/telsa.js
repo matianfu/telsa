@@ -1,5 +1,3 @@
-const path = require('path')
-const fs = require('fs')
 const child = require('child_process')
 const { Duplex } = require('stream')
 const net = require('net')
@@ -45,7 +43,8 @@ const HandshakeType = {
 }
 
 /**
- *
+ * @param {number} handshake message type
+ * @returns {string} handshake message name
  */
 const handshakeTypeName = type => {
   switch (type) {
@@ -75,10 +74,10 @@ const handshakeTypeName = type => {
 }
 
 /**
-alert description (warning or error)
-@readonly
-@enum {number} - 1 byte
-*/
+ * alert description (warning or error)
+ * @readonly
+ * @enum {number} - 1 byte
+ */
 const AlertDescription = {
   CLOSE_NOTIFY: 0,
   UNEXPECTED_MESSAGE: 10,
@@ -319,6 +318,8 @@ const createDecipher = (key, macKey) => {
 
 /**
  * convert a der certificate to pem format
+ * @param {Buffer} der - certificate in DER format
+ * @returns {string} certificate in PEM format
  */
 const derToPem = der =>
 `-----BEGIN CERTIFICATE-----
@@ -327,6 +328,9 @@ ${der.toString('base64')}
 
 /**
  * execute a command using bash shell with given input
+ * @param {string} cmd - command line
+ * @param {string} input - data written to stdin
+ * @param {function} callback - `(err, stdout, stderr) => {}`
  */
 const bash = (cmd, input, callback) => {
   const c = child.exec(cmd, { shell: '/bin/bash' }, callback)
@@ -339,6 +343,7 @@ const bash = (cmd, input, callback) => {
  * @param {string} cert - certificate to be verified
  * @param {string[]} intermediates - intermediate certificates
  * @param {string} ca - root ca certificates
+ * @param {function} callback - `err => {}`
  */
 const verifyCertificateChain = (cert, intermediates, ca, callback) => {
   const cmd = [
@@ -362,6 +367,7 @@ const verifyCertificateChain = (cert, intermediates, ca, callback) => {
 /**
  * extracts public key from the certificate
  * @param {string} cert - certificate in PEM format
+ * @param {function} callback - `(err, key) => {}`, key is a string.
  */
 const extractPublicKey = (cert, callback) =>
   bash('openssl x509 -noout -pubkey', cert, callback)
@@ -381,7 +387,7 @@ const extractPublicKey = (cert, callback) =>
 /** handshake state context **/
 class HandshakeContext {
   constructor () {
-    // cache all handshake messages except HELLO_REQUEST
+    /** cache all handshake messages except HELLO_REQUEST */
     this.buffer = []
     this.sessionId = 0
     this.clientRandom = randomBuffer(32)
@@ -619,11 +625,12 @@ class Telsa extends Duplex {
         return this.shiftFragment(2)
       case ContentType.CHANGE_CIPHER_SPEC:
         return this.shiftFragment(1)
-      case ContentType.HANDSHAKE:
+      case ContentType.HANDSHAKE: {
         if (this.fragment.data.length < 4) return
         const length = readUInt24(this.fragment.data.slice(1))
         if (this.fragment.data.length < 4 + length) return
         return this.shiftFragment(4 + length)
+      }
       case ContentType.APPLICATION_DATA:
         return this.shiftFragment(this.fragment.data.length)
       default:
@@ -708,11 +715,11 @@ class Telsa extends Duplex {
    */
   handleHandshakeMessage (msg) {
     const type = msg[0]
-    let data = msg.slice(4)
-    const shift = size => K(data.slice(0, size))(data = data.slice(size))
+    const data = msg.slice(4)
 
     // TODO may reply no_renegotiation
     if (type === HandshakeType.HELLO_REQUEST) return
+
     switch (type) {
       case HandshakeType.SERVER_HELLO:
         this.handleServerHello(data)
@@ -723,9 +730,9 @@ class Telsa extends Duplex {
       case HandshakeType.CERTIFICATE_REQUEST:
         this.handleCertificateRequest(data)
         break
-      case HandshakeType.SERVER_HELLO_DONE: {
+      case HandshakeType.SERVER_HELLO_DONE:
         this.handleServerHelloDone(data)
-      } break
+        break
       case HandshakeType.FINISHED:
         this.handleServerFinished(data)
         break
@@ -798,7 +805,7 @@ class Telsa extends Duplex {
       throw new Error('invalid message length')
     }
 
-    // certificates are in der format and reversed order
+    // certificates are in DER format and reversed order
     const ders = []
     while (data.length) {
       if (data.length < 3 || readUInt24(data) + 3 > data.length) {
@@ -807,6 +814,7 @@ class Telsa extends Duplex {
       ders.push(shift(readUInt24(shift(3))))
     }
 
+    // change to PEM format and reverse order
     const pems = ders.map(der => derToPem(der)).reverse()
     const pem = pems.pop()
 
@@ -972,8 +980,8 @@ class Telsa extends Duplex {
 
   /**
    * send client certificate if ServerHelloDone and
-   * server public key available, which also means server certificates
-   * verified
+   * server public key available (which also means server certificates
+   * verified)
    */
   sendClientCertificate () {
     if (this.hs.serverPublicKey &&
@@ -986,8 +994,11 @@ class Telsa extends Duplex {
     }
   }
 
+  /**
+   * send ClientKeyExchange message, preMasterSecret is encrypted
+   * using server's public key
+   */
   sendClientKeyExchange () {
-    // send key exchange
     this.sendHandshakeMessage(HandshakeType.CLIENT_KEY_EXCHANGE,
       Prepend16(publicEncrypt({
         key: this.hs.serverPublicKey,
@@ -997,6 +1008,9 @@ class Telsa extends Duplex {
     this.sendCertificateVerify()
   }
 
+  /**
+   * send CertificateVerify, ChangeCipherSpec, and client Finished
+   */
   sendCertificateVerify () {
     const key = this.opts.clientPrivateKey
     if (typeof key === 'function') {
