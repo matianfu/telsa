@@ -101,7 +101,7 @@ node `tls` is a subclass of `net.Socket`. `net.Socket` has its own `connect` eve
 - `lookup`, `ready`, and `timeout` events in `net.Socket` are not supported
 - All `stream.Readable` and `stream.Writable` events are supported. This is implemented by subclassing `stream.Duplex`.
   - `writable._write`
-  - `writable._writev` 
+  - `writable._writev` , not implemented
   - `writable._final`
   - `readable._read`
   - `writable._destroy` & `readable.destroy`
@@ -153,6 +153,118 @@ TLS is split into two layers. The lower layer is the TLS Record Protocol and the
 
 
 
+## Write Path
+
+Write path starts from an invocation of `_write` or `_final` function. Invocations are serialized via `callback` arguments. The following possible states:
+
+- idle, not invocation and not ended.
+- pending, the underlying stream is temporarily unavailable. `chunk`, `encoding`, and `callback` are cached.
+- draining, the data chunk has been written to the underlying stream and waiting for `drain` event is required. `callback` is cached.
+- ending,  `_final` is invoked.
+- ended, `_final` has been invoked.  
+
+
+
+## Read Path
+
+Read path starts from a `data` event from the underlying stream. If application data is generated, it is passed to upper layer via `readable.push()`. If this function returns false, the underlying stream is paused, until a `_read()` from the upper layer.
+
+- flowing
+- paused
+
+
+
+## Renegotiation
+
+If the client starts a renegotiation, it is possible some application data are received when expecting a ServerHello message. A timeout is required for Hello state.
+
+
+
+If the server starts a renegotiation, a HelloRequest is sent to the client. According to rfc document, the server should not send HelloRequest again. But the document does not mentioned whether the server could send application data after a HelloRequest message. We assume that this is possible. So a time out is also required in Hello state.
+
+
+
+When the client received a HelloRequest, it should transit to Hello state immediately. In Hello state `enter` method:
+
+- if the write path is in draining state, the `callback` should be called immediately.
+- if the read path is in paused state, it should be resumed.
+
+
+
+Renegotiation is not implemented in current version. But the possibility should be taken into account for state design.
+
+
+
+## Closing
+
+Closing a tls session may be initiated from either party by sending a `close_notify` alert to the other. 
+
+
+
+
+> Unless some other fatal alert has been transmitted, each party is required to send a `close_notify` alert before closing the write side of the connection.  The other party MUST respond with a `close_notify` alert of its own and close down the connection immediately,  discarding any pending writes.  It is not required for the initiator of the close to wait for the responding `close_notify` alert before closing the read side of the connection.
+
+
+
+The first sentence means the initiator should send a `close_notify` before invoking `end` of the underlying stream.
+
+The second sentence says the responder should reply with a `close_notify` then invoking `end` of the underlying stream immediately.
+
+The third sentence indicates that the initiator could discard the incoming data and close the underlying stream immediately, without waiting for the responding `close_notify` alert.
+
+
+
+> If the application protocol using TLS provides that any data may be carried over the underlying transport after the TLS connection is closed, the TLS implementation must receive the responding close_notify alert before indicating to the application layer that the TLS connection has ended. If the application protocol will not transfer any additional data, but will only close the underlying transport connection, then the implementation MAY choose to close the transport without waiting for the responding close_notify. No part of this standard should be taken to dictate the manner in which a usage profile for TLS manages its data transport, including when connections are opened or closed.
+>
+> Note: It is assumed that closing a connection reliably delivers pending data before destroying the transport.
+
+
+
+The first sentence says if the underlying stream carries not only a single TLS connection, the initiator should wait for the responding `close_notify` and emit a `close` to the upper layer until it arrives. 
+
+The second sentence says if the underlying stream is dedicated for a single TLS connection, which is our case, the initiator may close the transport immediately without waiting for the responding `close_notify`.
+
+The last note says, in our case, `end` should be used to close the connection, rather than a `destory`.
+
+
+
+Noticing that in TLS, there is no half-open connection, unlike a tcp connection. A clean up could be done synchronously.
+
+
+
+Also, a race condition may occur. The two parties send `close_notify` alerts at almost the same time. There is no way to differentiate whether the received `close_notify` is a response after the other party has received the alert, or before it receives the alert.
+
+
+
+In implementation, such a race condition could be avoided since the initiator is allowed to close the underlying stream immediately after sending a `close_notify`, without waiting for a reply.
+
+
+
+When the upper layer invokes the `end` method, `_final` function is called. In this function, we can:
+
+1. send a `close_notify` to the other party.
+2. clean up all listeners and mute error.
+3. invoke the `end` function with the `callback`.
+4. invoke the `readble.push` with `null` to close the connection.
+
+In this way, even if there are incoming fatal alert or `close_notify`, the initiator won't bother, which means, as long as the upper layer initiates a close, the TLS layer stops immediately and synchronously. The upper layer could only receive an error if the underlying stream could not flush the outgoing data.
+
+
+
+If a `close_notify` arrives first, we can:
+
+1. reply a `close_notify` to the other party immediately.
+2. if there are pending or draining write, trigger the `callback` with an error.
+3. invoke the readable.push with null to close the connection.
+
+After this steps, the tls is marked as finished. a write in this state is replied with an error. an end in this state is OK.
+
+
+
+Summary:
+
+1. there is no additional transient state required, such as disconnecting, etc.
+2. close could be initiated from either side. In both case, the tls machine stops synchronously.
 
 
 
@@ -160,6 +272,49 @@ TLS is split into two layers. The lower layer is the TLS Record Protocol and the
 
 
 
+
+
+
+1. `_final` is called. A close notify is sent from the client to the server.
+2. a close notify is received from the other party.
+   1. For tls
+      1. a close notify is replied.
+      2. clean up socket handlers, including `close`.
+   2. write path
+      1. if the state is pending or draining, the callback is triggered with an error (a server close).
+      2. if the state is finalizing, the callback is called without an error. **
+   3. read path
+      1. the readable.push is called to close the stream.
+
+
+
+# Error Handling
+
+Invocation or event sources:
+
+1. method invocation by upper layer.
+2. underlying layer's `data` event handler
+3. asynchronous callback
+
+
+
+All invocation or event sources should be try/catch-ed.
+
+
+
+Record Layer should be as robust as possible. If an error is thrown from the upper layer, it is possible to send a fatal alert before destroying the underlying stream.
+
+
+
+Data handler could detect finished state and abort further processing.
+
+
+
+All state object should be  
+
+
+
+destroy may happens anytime.
 
 
 
