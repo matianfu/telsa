@@ -10,11 +10,6 @@ const {
 const { concat, from } = Buffer
 
 /**
- * new Error('This socket has been ended by the other party');
- * EPIPE
- */
-
-/**
  * content type for TLS record layer
  * @readonly
  * @enum {number}
@@ -172,21 +167,23 @@ const alertDescription = desc => {
     case INTERNAL_ERROR:
       return 'internal_error'
     case USER_CANCELED:
-      return 'user_cancelled'
+      return 'user_canceled'
     case NO_RENEGOTIATION:
       return 'no_renegotiation'
     case UNSUPPORTED_EXTENSION:
       return 'unsupported_extension'
-    default:
-      // description may be extended by other spec
+    default: // description may be extended by other spec
       return 'unknown_alert_description'
   }
 }
 
 /**
- * TLSError is an internal class representing an
- * tls protocol error. It extends Error for preserving
- * error stack and debug printing.
+ * TLSError represents an detected error in tls protocol,
+ * such as decoding or decryption error, malformatted message
+ * or illegal value. It is not used for error emitted from
+ * dependent components, such as file system access error.
+ *
+ * TLSError has no error code defined.
  */
 class TLSError extends Error {
   constructor (desc, msg) {
@@ -205,11 +202,15 @@ class TLSError extends Error {
 
 /**
  * TLSAlert represents a tls alert received from the other party
+ *
+ * TLSAlert has no error code defined.
  */
-class TLSAlert {
-  constructor (desc) {
+class TLSAlert extends Error {
+  constructor (desc, level = FATAL) {
+    super(alertDescription(desc))
+    this.name = this.constructor.name
+    this.level = level
     this.description = desc
-    this.level = desc === CLOSE_NOTIFY ? WARNING : FATAL
   }
 }
 
@@ -634,11 +635,11 @@ const HANDSHAKING = 'Handshaking'
 const ESTABLISHED = 'Established'
 
 /**
- * telsa state, disconnected
+ * telsa state, terminated
  * @constant
  * @type {string}
  */
-const DISCONNECTED = 'Disconnected'
+const TERMINATED = 'Disconnected'
 
 /**
  * #### States
@@ -732,14 +733,13 @@ class Telsa extends Duplex {
      */
     this.writing = null
 
-    const onSocketErrorEarly = err => this.emit(err)
-
     /**
      * tcp connection
      * @type {net.Socket}
      */
-    this.socket = net.createConnection(opts, () => {
-      this.state = 'Handshaking'
+    this.socket = this.opts.socket || net.createConnection(opts)
+    this.socket.on('connect', () => {
+      this.state = HANDSHAKING
 
       /**
        * incomming data buffer, may contain fragmented records.
@@ -769,25 +769,24 @@ class Telsa extends Duplex {
        */
       this.decipher = null
 
-      this.socket.removeListener('error', onSocketErrorEarly)
-
-      this.socket.on('error', err => this.handleError(err))
+      this.socket.on('close', () => this.terminate('socket'))
       this.socket.on('data', data => {
         try {
           this.handleSocketData(data)
         } catch (e) {
-          this.handleError(e)
+          if (e instanceof TLSAlert) {
+            this.terminate('alert', e)
+          } else {
+            this.terminate('error', e)
+          }
         }
       })
-
-      this.socket.on('close', () => this.handleSocketClose())
 
       // start handshaking
       this.sendClientHello()
     })
 
-    this.socket.once('error', onSocketErrorEarly)
-
+    this.socket.on('error', err => this.terminate('socket', err))
     this.state = CONNECTING
   }
 
@@ -960,10 +959,10 @@ class Telsa extends Duplex {
       throw new TLSError(DECODE_ERROR, 'bad alert level')
     }
 
-    if (level === FATAL || (level === WARNING && desc === CLOSE_NOTIFY)) {
-      throw new TLSAlert(desc)
+    if (level === FATAL || desc === CLOSE_NOTIFY) {
+      throw new TLSAlert(desc, level)
     } else {
-      console.log(`telsa server alert "${alertDescription(desc)}"`)
+      // TODO console.log(`tls server alert: ${alertDescription(desc)}`)
     }
   }
 
@@ -1204,12 +1203,13 @@ class Telsa extends Duplex {
 
       // set state
       this.state = ESTABLISHED
-      console.log('entering Established state')
+
+      // TODO console.log('telsa entering Established state')
 
       // enter Established state
       this.socket.on('drain', () => {
         if (this.writing) {
-          const callback = this.writing
+          const callback = this.writing.callback
           this.writing = null
           callback()
         }
@@ -1365,10 +1365,10 @@ class Telsa extends Duplex {
         if (this.sendApplicationData(chunk)) {
           callback()
         } else {
-          this.writing = callback
+          this.writing = { callback }
         }
         break
-      case DISCONNECTED:
+      case TERMINATED:
         callback(new Error('disconnected'))
         break
       default:
@@ -1378,31 +1378,8 @@ class Telsa extends Duplex {
 
   /** implement Duplex _final */
   _final (callback) {
-    switch (this.state) {
-      case CONNECTING: {
-        this.socket.removeAllListeners()
-        this.socket.on('error', () => {})
-        this.socket.end()
-        callback()
-        this.state = DISCONNECTED
-      } break
-      case HANDSHAKING: {
-        this.socket.removeAllListeners()
-        this.socket.on('error', () => {})
-        // TODO send close_notify
-        this.socket.end()
-        this.state = DISCONNECTED
-        callback()
-      } break
-      case ESTABLISHED: {
-        // TODO
-      } break
-      case DISCONNECTED: {
-        callback()
-      } break
-      default:
-        break
-    }
+    this.terminate('final')
+    callback()
   }
 
   /** implement Duplex _read */
@@ -1411,97 +1388,88 @@ class Telsa extends Duplex {
   }
 
   /**
-   * This function handles error in Handshaking and Established states.
+   * terminate
    *
-   * All errors trigger a transition to `disconnected` state.
-   * 1. send fatal alert or close_notify warning if necessary
-   * 2. clean up all event handlers and end underlying socket
-   * 3. clean up write path:
-        if there ar blocking or draing write, pass error throught callback
-   *    otherwise emit error
-   * 4. clean up read path if connection established
-   * 5. trigger a close if connection established
+   * - final
+   * - socket, [err]
+   * - error, TLSError | Error
+   * - alert, TLSAlert
+   * - (close_notify) redefined from alert
    */
-  handleError (err) {
-    // 1. ERR_TLS_CLOSE_NOTIFY
-    // 2. ERR_TLS_ERROR (with description)
-    // 3. ERR_TLS_ALERT (with description)
-    // 4. ERR_TLS_SOCKET_CLOSE
-    // 5. Otherwise, it's a socket error
-    //
-    // In case 3, 4 and 5, there is no chance to send any message
-    // In case 2, a fatal alert should be sent
-    // In case 1, a reply close_notify should be sent
-    //
-    // 2/3/4/5 are error state. 1 may be OK if no pending or draing write
-    //
-    // In all cases, if pending or draing write exists
-    // for case 1, EPIPE with This socket has been ended by the other party
-    // for others, orignal error is returned via callback.
-    //
-    // If no pending or draining write
-    // for 2/3/4/5, error is emitted
-    //
-    //                                              handshaking   established
-    // step 1. write things if required             Y             Y
-    // step 2. clean up socket if necessary         Y             Y
-    // step 3. finish read path for close_notify    N             Y
-    // step 4. emit or callback error               Y (all)       Y (not close_notify)
-    // step 5. close                                N             Y
-
-    if (err.code === 'ERR_TLS_CLOSE_NOTIFY') {
-      // send close notify
+  terminate (reason, err) {
+    // redefine close_notify
+    if (reason === 'alert' && err.description === CLOSE_NOTIFY) {
+      reason = 'close_notify'
+      err = null
     }
 
-    if (err.code === 'ERR_TLS_FATAL_ERROR') {
-      // send fatal alert
-    }
-
-    // TODO open-close
-    this.socket.removeAllListeners()
-    this.socket.on('error', () => {})
-
-    // end read path
-    if (this.state === ESTABLISHED) this.push(null)
-
-    if (this.writing) {
-      const error = err.code === 'ERR_TLS_CLOSE_NOTIFY'
-        ? Object.assign(new Error('other party'), {})
-        : err
-    }
-
-    if (err instanceof TLSCloseNotify) {
-      this.socket.removeAllListeners()
-      this.socket.on('error', () => {})
-      this.socket.on('close', () => this.emit('close'))
-
-      // TODO write
-      this.socket.end()
-
-      // write path
-      if (this.writing) {
-        const callback = this.writing
-        this.writing = null
-        callback(new Error('server close'))
+    // send alert if socket available
+    try {
+      if (reason === 'final' && this.state === HANDSHAKING) {
+        this.sendAlert(WARNING, USER_CANCELED)
       }
 
-      // read path
-      this.push(null)
+      if ((reason === 'final' && this.state === ESTABLISHED) ||
+        reason === 'close_notify') {
+        this.sendAlert(WARNING, CLOSE_NOTIFY)
+      }
 
-      this.state = DISCONNECTED
-      return
+      if (reason === 'error') {
+        if (err instanceof TLSError) {
+          this.sendAlert(FATAL, err.description)
+        } else {
+          this.sendAlert(FATAL, INTERNAL_ERROR)
+        }
+      }
+    } catch (e) { }
+
+    // clean socket
+    this.socket.removeAllListeners()
+    this.socket.on('error', () => {})
+    this.socket.end()
+
+    // end read
+    if (reason === 'close_notify') this.push(null)
+
+    let callback
+    if (this.writing) {
+      callback = this.writing.callback
+      this.writing = null
     }
 
-    switch (this.state) {
-      case CONNECTING:
-        break
-      case HANDSHAKING:
-        break
-      case ESTABLISHED: {
-      } break
-      default:
-        break
+    // socket close always an error
+    if (reason === 'socket') err = err || new Error('premature close')
+
+    // close_notify cause error if
+    // 1. handshaking
+    // 2. draining write
+    if (reason === 'close_notify') {
+      if (this.state === HANDSHAKING) {
+        err = new Error('server close')
+      } else if (this.state === ESTABLISHED && callback) {
+        err = new Error('socket has been ended by the other party')
+        err.code = 'EPIPE'
+      }
     }
+
+    // over-simplified TODO
+    if (!err.code) {
+      if (this.state === HANDSHAKING) {
+        err.code = 'ERR_TLS_HANDSHAKE_FAILED'
+      } else if (this.state === ESTABLISHED) {
+        err.code = 'ERR_TLS_CONNECTION_FAILED'
+      }
+    }
+
+    if (err) {
+      if (callback) {
+        callback(err)
+      } else {
+        this.emit(err)
+      }
+    }
+
+    if (this.state === ESTABLISHED) this.emit('close')
   }
 }
 
