@@ -37,6 +37,7 @@
     "tui-jsdoc-template": "^1.2.2"
   },
   "dependencies": {
-    "debug": "^4.1.1"
+    "debug": "^4.1.1",
+    "node-forge": "^0.9.1"
   }
 }

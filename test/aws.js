@@ -13,3 +13,11 @@ let conn = new Telsa({
   ca
 })
 
+conn.on('error', err => {
+  console.log('error', err)
+})
+
+conn.on('close', () => {
+  console.log('telsa closed (by server)')
+})
+
