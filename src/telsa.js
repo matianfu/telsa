@@ -7,7 +7,6 @@ const {
 } = crypto
 
 const { concat, from } = Buffer
-
 const { asn1, pki } = require('node-forge')
 
 /**
@@ -26,22 +25,37 @@ const ContentType = {
  * @readonly
  * @enum {number} - 1 byte
  */
-const HELLO_REQUEST = 0
-const CLIENT_HELLO = 1
-const SERVER_HELLO = 2
-const CERTIFICATE = 11
-const SERVER_KEY_EXCHANGE = 12
-const CERTIFICATE_REQUEST = 13
-const SERVER_HELLO_DONE = 14
-const CERTIFICATE_VERIFY = 15
-const CLIENT_KEY_EXCHANGE = 16
-const FINISHED = 20
+const HandshakeType = {
+  HELLO_REQUEST: 0,
+  CLIENT_HELLO: 1,
+  SERVER_HELLO: 2,
+  CERTIFICATE: 11,
+  SERVER_KEY_EXCHANGE: 12,
+  CERTIFICATE_REQUEST: 13,
+  SERVER_HELLO_DONE: 14,
+  CERTIFICATE_VERIFY: 15,
+  CLIENT_KEY_EXCHANGE: 16,
+  FINISHED: 20
+}
 
 /**
  * @param {number} handshake message type
  * @returns {string} handshake message name
  */
 const handshakeType = type => {
+  const {
+    HELLO_REQUEST,
+    CLIENT_HELLO,
+    SERVER_HELLO,
+    CERTIFICATE,
+    SERVER_KEY_EXCHANGE,
+    CERTIFICATE_REQUEST,
+    SERVER_HELLO_DONE,
+    CERTIFICATE_VERIFY,
+    CLIENT_KEY_EXCHANGE,
+    FINISHED
+  } = HandshakeType
+
   switch (type) {
     case HELLO_REQUEST:
       return 'HelloRequest'
@@ -983,14 +997,26 @@ class Telsa extends Duplex {
    * @param {Buffer} msg - full message data, including type, length, and body
    */
   handleHandshakeMessage (msg) {
+    const {
+      HELLO_REQUEST,
+      CLIENT_HELLO,
+      SERVER_HELLO,
+      CERTIFICATE,
+      SERVER_KEY_EXCHANGE,
+      CERTIFICATE_REQUEST,
+      SERVER_HELLO_DONE,
+      CERTIFICATE_VERIFY,
+      CLIENT_KEY_EXCHANGE,
+      FINISHED
+    } = HandshakeType
+
     const type = msg[0]
     const data = msg.slice(4)
 
     console.log('  -> ' + handshakeType(type))
 
     switch (type) {
-      case HELLO_REQUEST:
-        // TODO may reply no_renegotiation
+      case HELLO_REQUEST: // TODO may reply no_renegotiation
         return
       case CLIENT_HELLO:
         throw new TLSError(UNEXPECTED_MESSAGE, 'unexpected client hello')
@@ -1286,11 +1312,8 @@ class Telsa extends Duplex {
    * handle application data
    */
   handleApplicationData (data) {
-    console.log('handle application data')
-    if (this.state === ESTABLISHED) {
-      // if (this.push(data))
-    } else {
-    }
+    // TODO
+    this.push(data)
   }
 
   /**
@@ -1315,6 +1338,7 @@ class Telsa extends Duplex {
    * @return {boolean} false if buffer full
    */
   sendChangeCipherSpec () {
+    console.log('<- Change Cipher Spec')
     return this.send(ContentType.CHANGE_CIPHER_SPEC, from([1]))
   }
 
@@ -1322,7 +1346,7 @@ class Telsa extends Duplex {
    * @return {boolean} false if buffer full
    */
   sendHandshakeMessage (type, data) {
-    console.log('< ' + handshakeType(type))
+    console.log('<- ' + handshakeType(type))
     data = concat([UInt8(type), Prepend24(data)])
     this.hs.push('client', data)
     return this.send(ContentType.HANDSHAKE, data)
@@ -1332,7 +1356,7 @@ class Telsa extends Duplex {
    * send ClientHello handshake message
    */
   sendClientHello () {
-    this.sendHandshakeMessage(CLIENT_HELLO, concat([
+    this.sendHandshakeMessage(HandshakeType.CLIENT_HELLO, concat([
       VER12,
       this.hs.clientRandom,
       from([0]), // session_id
@@ -1347,7 +1371,7 @@ class Telsa extends Duplex {
    * verified)
    */
   sendClientCertificate () {
-    this.sendHandshakeMessage(CERTIFICATE,
+    this.sendHandshakeMessage(HandshakeType.CERTIFICATE,
       Prepend24(concat([
         ...this.opts.clientCertificates.map(c => Prepend24(c))])))
   }
@@ -1357,7 +1381,7 @@ class Telsa extends Duplex {
    * using server's public key
    */
   sendClientKeyExchange () {
-    this.sendHandshakeMessage(CLIENT_KEY_EXCHANGE,
+    this.sendHandshakeMessage(HandshakeType.CLIENT_KEY_EXCHANGE,
       Prepend16(publicEncrypt({
         key: this.hs.serverPublicKey,
         padding: RSA_PKCS1_PADDING
@@ -1382,7 +1406,7 @@ class Telsa extends Duplex {
    * send CertificateVerify
    */
   sendCertificateVerify (sig) {
-    this.sendHandshakeMessage(CERTIFICATE_VERIFY,
+    this.sendHandshakeMessage(HandshakeType.CERTIFICATE_VERIFY,
       concat([RSA_PKCS1_SHA256, Prepend16(sig)]))
   }
 
@@ -1390,7 +1414,7 @@ class Telsa extends Duplex {
    * send Finished handshake message
    */
   sendFinished () {
-    this.sendHandshakeMessage(FINISHED, this.hs.clientVerifyData())
+    this.sendHandshakeMessage(HandshakeType.FINISHED, this.hs.clientVerifyData())
   }
 
   /**
@@ -1428,8 +1452,13 @@ class Telsa extends Duplex {
 
   /** implement Duplex _final */
   _final (callback) {
-    this.terminate('final')
     callback()
+    this.terminate('final')
+  }
+
+  _destroy (err, callback) {
+    callback(err)
+    this.terminate('destroy')
   }
 
   /** implement Duplex _read */
@@ -1438,16 +1467,19 @@ class Telsa extends Duplex {
   }
 
   /**
-   * terminate is the one-for-all method to end the telsa
+   * terminate is the one-for-all method to end the telsa.
+   * unlike node tls, telsa terminates synchronously, which means
+   * that there is no closing state. This is allowed in TLS spec.
    *
    * - final
+   * - destroy
    * - socket, [err]
    * - error, TLSError | Error
    * - alert, TLSAlert
    * - (close_notify) redefined from alert
    */
   terminate (reason, err) {
-    console.log('terminate', reason, err)
+    console.log('  terminate', this.state, reason, err && err.message)
 
     // redefine close_notify
     if (reason === 'alert' && err.description === CLOSE_NOTIFY) {
@@ -1457,11 +1489,13 @@ class Telsa extends Duplex {
 
     // send alert if socket available
     try {
-      if (reason === 'final' && this.state === HANDSHAKING) {
+      if ((reason === 'final' || reason === 'destroy') &&
+        this.state === HANDSHAKING) {
         this.sendAlert(WARNING, USER_CANCELED)
       }
 
-      if ((reason === 'final' && this.state === ESTABLISHED) ||
+      if (reason === 'final' ||
+        reason === 'destroy' ||
         reason === 'close_notify') {
         this.sendAlert(WARNING, CLOSE_NOTIFY)
       }
@@ -1478,10 +1512,14 @@ class Telsa extends Duplex {
     // clean socket
     this.socket.removeAllListeners()
     this.socket.on('error', () => {})
-    this.socket.end()
-
-    // end read
-    if (reason === 'close_notify') this.push(null)
+    if (reason === 'destroy') {
+      this.socket.destroy()
+    } else {
+      this.socket.end()
+    }
+    // if (reason === 'destroy')
+    // end
+    if (reason !== 'destroy') this.push(null)
 
     let callback
     if (this.writing) {
@@ -1517,11 +1555,16 @@ class Telsa extends Duplex {
       if (callback) {
         callback(err)
       } else {
-        this.emit(err)
+        this.emit('error', err)
       }
     }
 
-    if (this.state === ESTABLISHED) this.emit('close')
+    // duplex will emit close on its own for destroy
+    if (reason !== 'destroy') {
+      // read path `end` is emitted in nextTick()
+      // emitting `close` in nextTick guarantee it is after `end`
+      process.nextTick(() => this.emit('close'))
+    }
   }
 }
 
