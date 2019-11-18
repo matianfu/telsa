@@ -36,7 +36,7 @@
 <li>Connecting</li>
 <li>Handshaking</li>
 <li>Established</li>
-<li>Disconnected</li>
+<li>Terminated</li>
 </ul>
 <p>The following operations or events are <em>external</em> events
 in terms of a state machine.</p>
@@ -95,33 +95,7 @@ in terms of a state machine.</p>
 after the tls is connected.</li>
 </ul>
 <h4>Connecting State</h4>
-<p>In connecting state, only the following</p>
-<h4><code>Connecting</code></h4>
-<p>socket is connecting.</p>
-<ul>
-<li><code>_write</code> is blocked.</li>
-<li><code>_final</code> is allowed and triggers a transition to <code>Disconnected</code>.</li>
-<li><code>_read</code> returns nothing.</li>
-<li>socket error triggers a transition to <code>Disconnected</code>; if there is <code>bufferredWrite</code>, error is passed via <code>callback</code>, otherwise, it is emitted.</li>
-</ul>
-<h4><code>Handshaking</code></h4>
-<ul>
-<li><code>_write</code> is blocked.</li>
-<li><code>_final</code> triggers a transition to <code>Disconnected</code>. The callback is instantly invoked.</li>
-<li>socket error or message error triggers a transitoin to <code>Disconnected</code>.</li>
-</ul>
-<h4><code>Established</code></h4>
-<ul>
-<li><code>_write</code> is passed to socket connection. If blocking, the <code>callback</code> is blocked to next <code>Drain</code> event.</li>
-<li><code>_final</code> triggers a transition to <code>Disconnected</code>; the callback is passed to underlying <code>socket.end()</code>.</li>
-<li>socket error or message error triggers a transitoin to <code>Disconnected</code>.</li>
-</ul>
-<h4><code>Disconnected</code></h4>
-<ul>
-<li><code>_write</code> returns error.</li>
-<li><code>_final</code> succeeds anyway.</li>
-<li><code>_read</code> returns nothing.</li>
-</ul></div>
+<p>In connecting state, only the following</p></div>
         
     
 </header>
@@ -233,7 +207,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line799">line 799</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line775">line 775</a>
     </li></ul></dd>
     
 
@@ -327,7 +301,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line810">line 810</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line786">line 786</a>
     </li></ul></dd>
     
 
@@ -389,7 +363,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line813">line 813</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line789">line 789</a>
     </li></ul></dd>
     
 
@@ -457,7 +431,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line853">line 853</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line829">line 829</a>
     </li></ul></dd>
     
 
@@ -525,7 +499,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line858">line 858</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line834">line 834</a>
     </li></ul></dd>
     
 
@@ -597,7 +571,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line842">line 842</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line818">line 818</a>
     </li></ul></dd>
     
 
@@ -669,7 +643,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line848">line 848</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line824">line 824</a>
     </li></ul></dd>
     
 
@@ -741,7 +715,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line836">line 836</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line812">line 812</a>
     </li></ul></dd>
     
 
@@ -803,7 +777,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line803">line 803</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line779">line 779</a>
     </li></ul></dd>
     
 
@@ -875,7 +849,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line828">line 828</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line804">line 804</a>
     </li></ul></dd>
     
 
@@ -955,7 +929,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line822">line 822</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line798">line 798</a>
     </li></ul></dd>
     
 
@@ -1035,7 +1009,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1560">line 1560</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1535">line 1535</a>
     </li></ul></dd>
     
 
@@ -1123,7 +1097,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1571">line 1571</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1546">line 1546</a>
     </li></ul></dd>
     
 
@@ -1211,7 +1185,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1537">line 1537</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1512">line 1512</a>
     </li></ul></dd>
     
 
@@ -1299,7 +1273,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1016">line 1016</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line992">line 992</a>
     </li></ul></dd>
     
 
@@ -1436,7 +1410,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1064">line 1064</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1040">line 1040</a>
     </li></ul></dd>
     
 
@@ -1524,7 +1498,7 @@ after the tls is connected.</li>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1420">line 1420</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1396">line 1396</a>
     </li></ul></dd>
     
 
@@ -1617,7 +1591,7 @@ extracts server public key for futher usage.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1235">line 1235</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1211">line 1211</a>
     </li></ul></dd>
     
 
@@ -1711,7 +1685,7 @@ extracts server public key for futher usage.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1315">line 1315</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1291">line 1291</a>
     </li></ul></dd>
     
 
@@ -1799,7 +1773,7 @@ extracts server public key for futher usage.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1409">line 1409</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1385">line 1385</a>
     </li></ul></dd>
     
 
@@ -1888,7 +1862,7 @@ socket error</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line881">line 881</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line857">line 857</a>
     </li></ul></dd>
     
 
@@ -2025,7 +1999,7 @@ socket error</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1094">line 1094</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1070">line 1070</a>
     </li></ul></dd>
     
 
@@ -2167,7 +2141,7 @@ Established state or throw error</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1373">line 1373</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1349">line 1349</a>
     </li></ul></dd>
     
 
@@ -2268,7 +2242,7 @@ Established state or throw error</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1187">line 1187</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1163">line 1163</a>
     </li></ul></dd>
     
 
@@ -2356,7 +2330,7 @@ Established state or throw error</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1355">line 1355</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1331">line 1331</a>
     </li></ul></dd>
     
 
@@ -2493,7 +2467,7 @@ Established state or throw error</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1033">line 1033</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1009">line 1009</a>
     </li></ul></dd>
     
 
@@ -2577,7 +2551,7 @@ Established state or throw error</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line892">line 892</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line868">line 868</a>
     </li></ul></dd>
     
 
@@ -2675,7 +2649,7 @@ Established state or throw error</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line904">line 904</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line880">line 880</a>
     </li></ul></dd>
     
 
@@ -2785,7 +2759,7 @@ Established state or throw error</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line993">line 993</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line969">line 969</a>
     </li></ul></dd>
     
 
@@ -2891,7 +2865,7 @@ Established state or throw error</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line966">line 966</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line942">line 942</a>
     </li></ul></dd>
     
 
@@ -3069,7 +3043,7 @@ Established state or throw error</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1430">line 1430</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1406">line 1406</a>
     </li></ul></dd>
     
 
@@ -3153,7 +3127,7 @@ Established state or throw error</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1439">line 1439</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1415">line 1415</a>
     </li></ul></dd>
     
 
@@ -3259,7 +3233,7 @@ Established state or throw error</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1529">line 1529</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1505">line 1505</a>
     </li></ul></dd>
     
 
@@ -3369,7 +3343,7 @@ Established state or throw error</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1514">line 1514</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1490">line 1490</a>
     </li></ul></dd>
     
 
@@ -3453,7 +3427,7 @@ Established state or throw error</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1446">line 1446</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1422">line 1422</a>
     </li></ul></dd>
     
 
@@ -3565,7 +3539,7 @@ verified)</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1479">line 1479</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1455">line 1455</a>
     </li></ul></dd>
     
 
@@ -3653,7 +3627,7 @@ verified)</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1464">line 1464</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1440">line 1440</a>
     </li></ul></dd>
     
 
@@ -3742,7 +3716,7 @@ using server's public key</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1489">line 1489</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1465">line 1465</a>
     </li></ul></dd>
     
 
@@ -3830,7 +3804,7 @@ using server's public key</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1522">line 1522</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1498">line 1498</a>
     </li></ul></dd>
     
 
@@ -3914,7 +3888,7 @@ using server's public key</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1454">line 1454</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1430">line 1430</a>
     </li></ul></dd>
     
 
@@ -4024,7 +3998,7 @@ using server's public key</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1025">line 1025</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1001">line 1001</a>
     </li></ul></dd>
     
 
@@ -4112,7 +4086,7 @@ using server's public key</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line944">line 944</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line920">line 920</a>
     </li></ul></dd>
     
 
@@ -4218,7 +4192,7 @@ using server's public key</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1500">line 1500</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1476">line 1476</a>
     </li></ul></dd>
     
 
@@ -4316,7 +4290,7 @@ that there is no closing state. This is allowed in TLS spec.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1587">line 1587</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line1562">line 1562</a>
     </li></ul></dd>
     
 
@@ -4368,7 +4342,7 @@ that there is no closing state. This is allowed in TLS spec.</p>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Mon Nov 18 2019 22:59:26 GMT+0800 (China Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Mon Nov 18 2019 23:15:07 GMT+0800 (China Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

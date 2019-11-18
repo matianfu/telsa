@@ -539,6 +539,7 @@ class TLSAlert extends Error {
    */
   constructor (desc, level = AlertLevel.FATAL) {
     super(alertDescription(desc))
+
     this.name = this.constructor.name
 
     /** alert level */
@@ -668,12 +669,12 @@ class HandshakeContext {
     this.deriveKeys()
   }
 
-  /** generates client verify data (used in client Finished message) */
+  /** generates client verify data in client Finished message */
   clientVerifyData () {
     return PRF256(this.masterSecret, 'client finished', this.digest(), 12)
   }
 
-  /** generates verify data in server Finsihed message */
+  /** generates server verify data in server Finsihed message */
   serverVerifyData () {
     return PRF256(this.masterSecret, 'server finished', this.digest(), 12)
   }
@@ -727,7 +728,7 @@ const TERMINATED = 'Disconnected'
  * - Connecting
  * - Handshaking
  * - Established
- * - Disconnected
+ * - Terminated
  *
  * The following operations or events are *external* events
  * in terms of a state machine.
@@ -766,32 +767,7 @@ const TERMINATED = 'Disconnected'
  * #### Connecting State
  *
  * In connecting state, only the following
-
-#### `Connecting`
-
-socket is connecting.
-
-- `_write` is blocked.
-- `_final` is allowed and triggers a transition to `Disconnected`.
-- `_read` returns nothing.
-- socket error triggers a transition to `Disconnected`; if there is `bufferredWrite`, error is passed via `callback`, otherwise, it is emitted.
-
-#### `Handshaking`
-
-- `_write` is blocked.
-- `_final` triggers a transition to `Disconnected`. The callback is instantly invoked.
-- socket error or message error triggers a transitoin to `Disconnected`.
-
-#### `Established`
-- `_write` is passed to socket connection. If blocking, the `callback` is blocked to next `Drain` event.
-- `_final` triggers a transition to `Disconnected`; the callback is passed to underlying `socket.end()`.
-- socket error or message error triggers a transitoin to `Disconnected`.
-
-#### `Disconnected`
-- `_write` returns error.
-- `_final` succeeds anyway.
-- `_read` returns nothing.
-*/
+ */
 class Telsa extends Duplex {
   /**
    * @param {object} opts
@@ -1527,7 +1503,6 @@ class Telsa extends Duplex {
    * @return {boolean} false if buffer full
    */
   sendApplicationData (data, callback) {
-    console.log('sending: application data')
     return this.send(ContentType.APPLICATION_DATA, data)
   }
 
@@ -1549,7 +1524,7 @@ class Telsa extends Duplex {
         }
         break
       case TERMINATED:
-        callback(new Error('disconnected'))
+        callback(new Error('This socket has been terminated'))
         break
       default:
         break
@@ -1628,7 +1603,7 @@ class Telsa extends Duplex {
     } else {
       this.socket.end()
     }
-    // if (reason === 'destroy')
+
     // end
     if (reason !== 'destroy') this.push(null)
 
@@ -1638,7 +1613,7 @@ class Telsa extends Duplex {
       this.writing = null
     }
 
-    // socket close always an error
+    // socket close always an error TODO
     if (reason === 'socket') err = err || new Error('premature close')
 
     // close_notify cause error if
