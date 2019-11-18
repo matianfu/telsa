@@ -460,16 +460,6 @@ const createDecipher = (key, macKey) => {
 }
 
 /**
- * convert a der certificate to pem format
- * @param {Buffer} der - certificate in DER format
- * @returns {string} certificate in PEM format
- */
-const derToPem = der =>
-`-----BEGIN CERTIFICATE-----
-${der.toString('base64')}
------END CERTIFICATE-----`
-
-/**
  * @typedef {object} Fragment
  * @property {number} type - content type
  * @property {Buffer} data - fragment data
@@ -552,17 +542,17 @@ class HandshakeContext {
     }
 
     if (!this.buffer.length) {
-      const msg = 
-        `expected ${handshakeType(type)} from ${from}, `
-        + `actual none`
+      const msg =
+        `expected ${handshakeType(type)} from ${from}, ` +
+        'actual none'
       throw new TLSError(UNEXPECTED_MESSAGE, msg)
     }
 
     const last = this.buffer[this.buffer.length - 1]
     if (last.from !== from || last[0] !== type) {
-      const msg = 
-        `expected ${handshakeType(type)} from ${from}, `
-        + `actual ${handshakeType(last[0])} from ${last.from}`
+      const msg =
+        `expected ${handshakeType(type)} from ${from}, ` +
+        `actual ${handshakeType(last[0])} from ${last.from}`
       throw new TLSError(UNEXPECTED_MESSAGE, msg)
     }
   }
@@ -721,7 +711,7 @@ class Telsa extends Duplex {
     /** root ca in forge format */
     this.ca = pki.certificateFromPem(this.opts.ca)
 
-    /** forge ca store */ 
+    /** forge ca store */
     this.caStore = pki.createCaStore([this.ca])
 
     /**
@@ -996,7 +986,7 @@ class Telsa extends Duplex {
     const type = msg[0]
     const data = msg.slice(4)
 
-    console.log('-> ' + handshakeType(type))
+    console.log('  -> ' + handshakeType(type))
 
     switch (type) {
       case HELLO_REQUEST:
@@ -1109,7 +1099,7 @@ class Telsa extends Duplex {
   }
 
   /**
-   * extracts and verifies server certificates. If succeeded, 
+   * extracts and verifies server certificates. If succeeded,
    * extracts server public key for futher usage.
    *
    * ```
@@ -1140,7 +1130,7 @@ class Telsa extends Duplex {
         certAsn1 = asn1.fromDer(der.toString('binary'))
       } catch (e) {
         console.log('asn1.fromDer failed()', e)
-        throw new TLSError(BAD_CERTIFICATE, 
+        throw new TLSError(BAD_CERTIFICATE,
           'failed to parse certificate')
       }
 
@@ -1148,7 +1138,7 @@ class Telsa extends Duplex {
         cert = pki.certificateFromAsn1(certAsn1)
       } catch (e) {
         console.log('pki.certificateFromAsn1() failed', e)
-        throw new TLSError(UNSUPPORTED_CERTIFICATE, 
+        throw new TLSError(UNSUPPORTED_CERTIFICATE,
           'failed to construct forge certificate from given asn1 data')
       }
 
@@ -1170,10 +1160,10 @@ class Telsa extends Duplex {
         verified = pki.verifyCertificateChain(this.caStore, chain, opts)
       } catch (e) {
         console.log('pki.verifyCertificateChain() failed', e)
-        throw new TLSError(CERTIFICATE_UNKNOWN, 
+        throw new TLSError(CERTIFICATE_UNKNOWN,
           'failed to verify certificate chain')
       }
-      
+
       if (verified) {
         this.hs.serverPublicKey = pki.publicKeyToPem(chain[0].publicKey)
         return
@@ -1287,7 +1277,7 @@ class Telsa extends Duplex {
   handleChangeCipherSpec (data) {
     // TODO expect
     // TODO validate
-    console.log('-> ChangeCipherSpec', data)
+    console.log('  -> ChangeCipherSpec', data)
     this.serverChangeCipherSpec(this.hs.serverWriteKey,
       this.hs.serverWriteMacKey)
   }
@@ -1381,7 +1371,7 @@ class Telsa extends Duplex {
     const key = this.opts.clientPrivateKey
     const tbs = this.hs.tbs()
     if (typeof key === 'function') {
-      key(tbs, (err, sig) => { })
+      key(tbs, callback)
     } else {
       const sig = createSign('sha256').update(tbs).sign(key)
       process.nextTick(() => callback(null, sig))
