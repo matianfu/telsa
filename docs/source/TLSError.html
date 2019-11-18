@@ -28,14 +28,13 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>TLSError<span class="signature">()</span><span class="type-signature"></span></h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>TLSError<span class="signature">(desc, msg<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h2>
         
-            <div class="class-description">TLSError represents an detected error in tls protocol,
+            <div class="class-description"><p>TLSError represents an error in tls protocol handling,
 such as decoding or decryption error, malformatted message
 or illegal value. It is not used for error emitted from
-dependent components, such as file system access error.
-
-TLSError has no error code defined.</div>
+dependent components, such as socket error or file system error.</p>
+<p>TLSError has no error code defined.</p></div>
         
     
 </header>
@@ -50,19 +49,122 @@ TLSError has no error code defined.</div>
     
 
     
-    <h4 class="name" id="TLSError"><span class="type-signature"></span>new TLSError<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="TLSError"><span class="type-signature"></span>new TLSError<span class="signature">(desc, msg<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
     
 
     
 
 
 
+<div class="description">
+    <p>constructs a TLSError.</p>
+<p>If <code>msg</code> is an Error, TLSError preserves its properties, including
+message and stack. If <code>msg</code> is string, it is used as error message.
+If <code>msg</code> is not provided, TLSError use the alert description name as
+error message.</p>
+</div>
 
 
 
 
 
 
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>desc</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>alert description</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>msg</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+|
+
+<span class="param-type">Error</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>error or error message</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -98,7 +200,7 @@ TLSError has no error code defined.</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line190">line 190</a>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line511">line 511</a>
     </li></ul></dd>
     
 
@@ -144,6 +246,134 @@ TLSError has no error code defined.</div>
     
 
     
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id="description"><span class="type-signature"></span>description<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    <p>alert description</p>
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line525">line 525</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="level"><span class="type-signature"></span>level<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    <p>alert level</p>
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="telsa.js.html">telsa.js</a>, <a href="telsa.js.html#line523">line 523</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+    
 
     
 
@@ -160,13 +390,13 @@ TLSError has no error code defined.</div>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="HandshakeContext.html">HandshakeContext</a></li><li><a href="Telsa.html">Telsa</a></li><li><a href="TLSAlert.html">TLSAlert</a></li><li><a href="TLSError.html">TLSError</a></li></ul><h3>Global</h3><ul><li><a href="global.html#AES_128_CBC_SHA">AES_128_CBC_SHA</a></li><li><a href="global.html#alertDescription">alertDescription</a></li><li><a href="global.html#alertLevel">alertLevel</a></li><li><a href="global.html#bash">bash</a></li><li><a href="global.html#CLOSE_NOTIFY">CLOSE_NOTIFY</a></li><li><a href="global.html#CONNECTING">CONNECTING</a></li><li><a href="global.html#ContentType">ContentType</a></li><li><a href="global.html#createCipher">createCipher</a></li><li><a href="global.html#createDecipher">createDecipher</a></li><li><a href="global.html#createSequenceNumber">createSequenceNumber</a></li><li><a href="global.html#derToPem">derToPem</a></li><li><a href="global.html#ESTABLISHED">ESTABLISHED</a></li><li><a href="global.html#extractPublicKey">extractPublicKey</a></li><li><a href="global.html#handshakeTypeName">handshakeTypeName</a></li><li><a href="global.html#HANDSHAKING">HANDSHAKING</a></li><li><a href="global.html#HELLO_REQUEST">HELLO_REQUEST</a></li><li><a href="global.html#HMAC1">HMAC1</a></li><li><a href="global.html#HMAC256">HMAC256</a></li><li><a href="global.html#K">K</a></li><li><a href="global.html#Prepend8">Prepend8</a></li><li><a href="global.html#Prepend16">Prepend16</a></li><li><a href="global.html#Prepend24">Prepend24</a></li><li><a href="global.html#PRF256">PRF256</a></li><li><a href="global.html#randomBuffer">randomBuffer</a></li><li><a href="global.html#readUInt24">readUInt24</a></li><li><a href="global.html#RSA_PKCS1_PADDING">RSA_PKCS1_PADDING</a></li><li><a href="global.html#RSA_PKCS1_SHA256">RSA_PKCS1_SHA256</a></li><li><a href="global.html#SHA256">SHA256</a></li><li><a href="global.html#TERMINATED">TERMINATED</a></li><li><a href="global.html#UInt8">UInt8</a></li><li><a href="global.html#UInt16">UInt16</a></li><li><a href="global.html#UInt24">UInt24</a></li><li><a href="global.html#VER12">VER12</a></li><li><a href="global.html#verifyCertificateChain">verifyCertificateChain</a></li><li><a href="global.html#WARNING">WARNING</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="HandshakeContext.html">HandshakeContext</a></li><li><a href="Telsa.html">Telsa</a></li><li><a href="TLSAlert.html">TLSAlert</a></li><li><a href="TLSError.html">TLSError</a></li></ul><h3>Global</h3><ul><li><a href="global.html#AES_128_CBC_SHA">AES_128_CBC_SHA</a></li><li><a href="global.html#alertDescription">alertDescription</a></li><li><a href="global.html#AlertDescription">AlertDescription</a></li><li><a href="global.html#AlertLevel">AlertLevel</a></li><li><a href="global.html#alertLevel">alertLevel</a></li><li><a href="global.html#CONNECTING">CONNECTING</a></li><li><a href="global.html#ContentType">ContentType</a></li><li><a href="global.html#contentType">contentType</a></li><li><a href="global.html#createCipher">createCipher</a></li><li><a href="global.html#createDecipher">createDecipher</a></li><li><a href="global.html#createSequenceNumber">createSequenceNumber</a></li><li><a href="global.html#ESTABLISHED">ESTABLISHED</a></li><li><a href="global.html#HandshakeType">HandshakeType</a></li><li><a href="global.html#handshakeType">handshakeType</a></li><li><a href="global.html#HANDSHAKING">HANDSHAKING</a></li><li><a href="global.html#HMAC1">HMAC1</a></li><li><a href="global.html#HMAC256">HMAC256</a></li><li><a href="global.html#K">K</a></li><li><a href="global.html#Prepend8">Prepend8</a></li><li><a href="global.html#Prepend16">Prepend16</a></li><li><a href="global.html#Prepend24">Prepend24</a></li><li><a href="global.html#PRF256">PRF256</a></li><li><a href="global.html#randomBuffer">randomBuffer</a></li><li><a href="global.html#readUInt24">readUInt24</a></li><li><a href="global.html#RSA_PKCS1_PADDING">RSA_PKCS1_PADDING</a></li><li><a href="global.html#RSA_PKCS1_SHA256">RSA_PKCS1_SHA256</a></li><li><a href="global.html#SHA256">SHA256</a></li><li><a href="global.html#TERMINATED">TERMINATED</a></li><li><a href="global.html#UInt8">UInt8</a></li><li><a href="global.html#UInt16">UInt16</a></li><li><a href="global.html#UInt24">UInt24</a></li><li><a href="global.html#VER12">VER12</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Mon Nov 18 2019 11:49:58 GMT+0800 (China Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Mon Nov 18 2019 22:59:26 GMT+0800 (China Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

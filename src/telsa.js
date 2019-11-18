@@ -3,238 +3,14 @@ const net = require('net')
 const crypto = require('crypto')
 const {
   createHash, createHmac, createSign, createCipheriv,
-  createDecipheriv, publicEncrypt, randomFillSync
+  createDecipheriv, publicEncrypt, randomFillSync, constants
 } = crypto
 
 const { concat, from } = Buffer
 const { asn1, pki } = require('node-forge')
 
 /**
- * tls record content type
- * @enum {number}
- */
-const ContentType = {
-  CHANGE_CIPHER_SPEC: 20,
-  ALERT: 21,
-  HANDSHAKE: 22,
-  APPLICATION_DATA: 23
-}
-
-/**
- * handshake record type
- * @readonly
- * @enum {number} - 1 byte
- */
-const HandshakeType = {
-  HELLO_REQUEST: 0,
-  CLIENT_HELLO: 1,
-  SERVER_HELLO: 2,
-  CERTIFICATE: 11,
-  SERVER_KEY_EXCHANGE: 12,
-  CERTIFICATE_REQUEST: 13,
-  SERVER_HELLO_DONE: 14,
-  CERTIFICATE_VERIFY: 15,
-  CLIENT_KEY_EXCHANGE: 16,
-  FINISHED: 20
-}
-
-/**
- * @param {number} handshake message type
- * @returns {string} handshake message name
- */
-const handshakeType = type => {
-  const {
-    HELLO_REQUEST,
-    CLIENT_HELLO,
-    SERVER_HELLO,
-    CERTIFICATE,
-    SERVER_KEY_EXCHANGE,
-    CERTIFICATE_REQUEST,
-    SERVER_HELLO_DONE,
-    CERTIFICATE_VERIFY,
-    CLIENT_KEY_EXCHANGE,
-    FINISHED
-  } = HandshakeType
-
-  switch (type) {
-    case HELLO_REQUEST:
-      return 'HelloRequest'
-    case CLIENT_HELLO:
-      return 'ClientHello'
-    case SERVER_HELLO:
-      return 'ServerHello'
-    case CERTIFICATE:
-      return 'Certificate'
-    case SERVER_KEY_EXCHANGE:
-      return 'ServerKeyExchange'
-    case CERTIFICATE_REQUEST:
-      return 'CertificateRequest'
-    case SERVER_HELLO_DONE:
-      return 'ServerHelloDone'
-    case CERTIFICATE_VERIFY:
-      return 'CertificateVerify'
-    case CLIENT_KEY_EXCHANGE:
-      return 'ClientKeyExchange'
-    case FINISHED:
-      return 'Finished'
-    default:
-      throw new Error(`unknown handshake type ${type}`)
-  }
-}
-
-/**
- *
- */
-const WARNING = 1
-const FATAL = 2
-
-/**
- *
- */
-const alertLevel = level => {
-  switch (level) {
-    case WARNING:
-      return 'warning'
-    case FATAL:
-      return 'fatal'
-    default:
-      throw new Error(`unknown alert level ${level}`)
-  }
-}
-
-/**
- * alert description (warning or error)
- * @readonly
- * @enum {number} - 1 byte
- */
-const CLOSE_NOTIFY = 0
-const UNEXPECTED_MESSAGE = 10
-const BAD_RECORD_MAC = 20
-const DECRYPTION_FAILED_RESERVED = 21
-const RECORD_OVERFLOW = 22
-const DECOMPRESSION_FAILURE = 30
-const HANDSHAKE_FAILURE = 40
-const NO_CERTIFICATE_RESERVED = 41
-const BAD_CERTIFICATE = 42
-const UNSUPPORTED_CERTIFICATE = 43
-const CERTIFICATE_REVOKED = 44
-const CERTIFICATE_EXPIRED = 45
-const CERTIFICATE_UNKNOWN = 46
-const ILLEGAL_PARAMETER = 47
-const UNKNOWN_CA = 48
-const ACCESS_DENIED = 49
-const DECODE_ERROR = 50
-const DECRYPT_ERROR = 51
-const EXPORT_RESTRICTION_RESERVED = 60
-const PROTOCOL_VERSION = 70
-const INSUFFICIENT_SECURITY = 71
-const INTERNAL_ERROR = 80
-const USER_CANCELED = 90
-const NO_RENEGOTIATION = 100
-const UNSUPPORTED_EXTENSION = 110
-
-/**
- * @returns {string} name
- */
-const alertDescription = desc => {
-  switch (desc) {
-    case CLOSE_NOTIFY:
-      return 'close_notify'
-    case UNEXPECTED_MESSAGE:
-      return 'unexpected_message'
-    case BAD_RECORD_MAC:
-      return 'bad_record_mac'
-    case DECRYPTION_FAILED_RESERVED:
-      return 'decryption_failed_reserved'
-    case RECORD_OVERFLOW:
-      return 'record_overflow'
-    case DECOMPRESSION_FAILURE:
-      return 'decompression_failure'
-    case HANDSHAKE_FAILURE:
-      return 'handshake_failure'
-    case NO_CERTIFICATE_RESERVED:
-      return 'no_certificate_reserved'
-    case BAD_CERTIFICATE:
-      return 'bad_certificate'
-    case UNSUPPORTED_CERTIFICATE:
-      return 'unsupported_certificate'
-    case CERTIFICATE_REVOKED:
-      return 'certificate_revoked'
-    case CERTIFICATE_EXPIRED:
-      return 'certificate_expired'
-    case CERTIFICATE_UNKNOWN:
-      return 'certificate_unknown'
-    case ILLEGAL_PARAMETER:
-      return 'illegal_parameter'
-    case UNKNOWN_CA:
-      return 'unknown_ca'
-    case ACCESS_DENIED:
-      return 'access_denied'
-    case DECODE_ERROR:
-      return 'decode_error'
-    case DECRYPT_ERROR:
-      return 'decrypt_error'
-    case EXPORT_RESTRICTION_RESERVED:
-      return 'export_restriction_reserved'
-    case PROTOCOL_VERSION:
-      return 'protocol_version'
-    case INSUFFICIENT_SECURITY:
-      return 'insufficient_security'
-    case INTERNAL_ERROR:
-      return 'internal_error'
-    case USER_CANCELED:
-      return 'user_canceled'
-    case NO_RENEGOTIATION:
-      return 'no_renegotiation'
-    case UNSUPPORTED_EXTENSION:
-      return 'unsupported_extension'
-    default: // description may be extended by other spec
-      return 'unknown_alert_description'
-  }
-}
-
-/**
- * TLSError represents an detected error in tls protocol,
- * such as decoding or decryption error, malformatted message
- * or illegal value. It is not used for error emitted from
- * dependent components, such as file system access error.
- *
- * TLSError has no error code defined.
- */
-class TLSError extends Error {
-  constructor (desc, msg) {
-    if (msg instanceof Error) {
-      super(msg.message)
-      Object.assign(this, msg)
-      this.stack = msg.stack
-    } else {
-      super(msg || alertDescription(desc))
-    }
-    this.name = this.name || this.constructor.name
-    this.level = FATAL
-    this.description = desc
-  }
-}
-
-/**
- * TLSAlert represents a tls alert received from the other party
- *
- * TLSAlert has no error code defined.
- */
-class TLSAlert extends Error {
-  constructor (desc, level = FATAL) {
-    super(alertDescription(desc))
-    this.name = this.constructor.name
-    this.level = level
-    this.description = desc
-  }
-}
-
-/**
- * decipher error, this error may be thrown by
- * decipher, but should never be sent to server,
- * use bad_record_mac instead
- *
+ * TODO
  * ```
  * RFC 4346, TLS v1.1, page 28
  * Note: Differentiating between bad_record_mac and decryption_failed
@@ -244,8 +20,14 @@ class TLSAlert extends Error {
  * ```
  */
 
-/** @function */
+/** 
+ * K combinator is a higher-order function which accepts two
+ * expressions `x` and `y`. It evalutes `x` then `y` and 
+ * returns `x` finally. It is helpful for compact code.
+ * @function 
+ */
 const K = x => y => x
+
 /** @constant {buffer} - TLS version 1.2 */
 const VER12 = from([0x03, 0x03])
 /** @constant {buffer} - cipher suite */
@@ -253,7 +35,7 @@ const AES_128_CBC_SHA = from([0x00, 0x2f])
 /** @constant {buffer} - signature algorithm */
 const RSA_PKCS1_SHA256 = from([0x04, 0x01])
 /** @constant {number} - for public key encryption padding */
-const RSA_PKCS1_PADDING = crypto.constants.RSA_PKCS1_PADDING
+const RSA_PKCS1_PADDING = constants.RSA_PKCS1_PADDING
 
 /**
  * convert a uint8 number to a 1-byte buffer
@@ -439,6 +221,8 @@ const createCipher = (key, macKey, _iv) => {
  * @returns {DecipherFunction}
  */
 const createDecipher = (key, macKey) => {
+  const { DECRYPTION_FAILED_RESERVED, BAD_RECORD_MAC } = AlertDescription
+
   const SN = createSequenceNumber()
   return (type, data) => {
     const iv = data.slice(0, 16)
@@ -473,17 +257,298 @@ const createDecipher = (key, macKey) => {
   }
 }
 
-/**
- * @typedef {object} Fragment
- * @property {number} type - content type
- * @property {Buffer} data - fragment data
- */
+/** @enum {number} tls record content type */
+const ContentType = {
+  CHANGE_CIPHER_SPEC: 20,
+  ALERT: 21,
+  HANDSHAKE: 22,
+  APPLICATION_DATA: 23
+}
 
 /**
- * @typedef {object} Message
- * @property {number} type - content type
- * @property {Buffer} data - message data (no fragment)
+ * @param {number} content type
+ * @returns {string} content type name
  */
+const contentType = type => {
+  const {
+    CHANGE_CIPHER_SPEC,
+    ALERT,
+    HANDSHAKE,
+    APPLICATION_DATA
+  } = ContentType
+
+  switch (type) {
+    case CHANGE_CIPHER_SPEC:
+      return 'change_cipher_spec'
+    case ALERT:
+      return 'alert'
+    case HANDSHAKE:
+      return 'handshake'
+    case APPLICATION_DATA:
+      return 'application_data'
+    default:
+      throw new Error('unknown content type')
+  }
+}
+
+/** @enum {number} - handshake message type */
+const HandshakeType = {
+  HELLO_REQUEST: 0,
+  CLIENT_HELLO: 1,
+  SERVER_HELLO: 2,
+  CERTIFICATE: 11,
+  SERVER_KEY_EXCHANGE: 12,
+  CERTIFICATE_REQUEST: 13,
+  SERVER_HELLO_DONE: 14,
+  CERTIFICATE_VERIFY: 15,
+  CLIENT_KEY_EXCHANGE: 16,
+  FINISHED: 20
+}
+
+/**
+ * @param {number} handshake message type
+ * @returns {string} handshake message type name
+ */
+const handshakeType = type => {
+  const {
+    HELLO_REQUEST,
+    CLIENT_HELLO,
+    SERVER_HELLO,
+    CERTIFICATE,
+    SERVER_KEY_EXCHANGE,
+    CERTIFICATE_REQUEST,
+    SERVER_HELLO_DONE,
+    CERTIFICATE_VERIFY,
+    CLIENT_KEY_EXCHANGE,
+    FINISHED
+  } = HandshakeType
+
+  switch (type) {
+    case HELLO_REQUEST:
+      return 'HelloRequest'
+    case CLIENT_HELLO:
+      return 'ClientHello'
+    case SERVER_HELLO:
+      return 'ServerHello'
+    case CERTIFICATE:
+      return 'Certificate'
+    case SERVER_KEY_EXCHANGE:
+      return 'ServerKeyExchange'
+    case CERTIFICATE_REQUEST:
+      return 'CertificateRequest'
+    case SERVER_HELLO_DONE:
+      return 'ServerHelloDone'
+    case CERTIFICATE_VERIFY:
+      return 'CertificateVerify'
+    case CLIENT_KEY_EXCHANGE:
+      return 'ClientKeyExchange'
+    case FINISHED:
+      return 'Finished'
+    default:
+      throw new Error(`unknown handshake type ${type}`)
+  }
+}
+
+/** @enum {number} tls alert level */
+const AlertLevel = {
+  WARNING: 1,
+  FATAL: 2
+}
+
+/**
+ * @param {number} alert level
+ * @returns {string} alert level name
+ */
+const alertLevel = level => {
+  switch (level) {
+    case AlertLevel.WARNING:
+      return 'warning'
+    case AlertLevel.FATAL:
+      return 'fatal'
+    default:
+      throw new Error(`unknown alert level ${level}`)
+  }
+}
+
+/** @enum {number} alert description */
+const AlertDescription = {
+  CLOSE_NOTIFY: 0,
+  UNEXPECTED_MESSAGE: 10,
+  BAD_RECORD_MAC: 20,
+  DECRYPTION_FAILED_RESERVED: 21,
+  RECORD_OVERFLOW: 22,
+  DECOMPRESSION_FAILURE: 30,
+  HANDSHAKE_FAILURE: 40,
+  NO_CERTIFICATE_RESERVED: 41,
+  BAD_CERTIFICATE: 42,
+  UNSUPPORTED_CERTIFICATE: 43,
+  CERTIFICATE_REVOKED: 44,
+  CERTIFICATE_EXPIRED: 45,
+  CERTIFICATE_UNKNOWN: 46,
+  ILLEGAL_PARAMETER: 47,
+  UNKNOWN_CA: 48,
+  ACCESS_DENIED: 49,
+  DECODE_ERROR: 50,
+  DECRYPT_ERROR: 51,
+  EXPORT_RESTRICTION_RESERVED: 60,
+  PROTOCOL_VERSION: 70,
+  INSUFFICIENT_SECURITY: 71,
+  INTERNAL_ERROR: 80,
+  USER_CANCELED: 90,
+  NO_RENEGOTIATION: 100,
+  UNSUPPORTED_EXTENSION: 110
+}
+
+/**
+ * @param {number} alert description
+ * @returns {string} alert description name
+ */
+const alertDescription = desc => {
+  const {
+    CLOSE_NOTIFY,
+    UNEXPECTED_MESSAGE,
+    BAD_RECORD_MAC,
+    DECRYPTION_FAILED_RESERVED,
+    RECORD_OVERFLOW,
+    DECOMPRESSION_FAILURE,
+    HANDSHAKE_FAILURE,
+    NO_CERTIFICATE_RESERVED,
+    BAD_CERTIFICATE,
+    UNSUPPORTED_CERTIFICATE,
+    CERTIFICATE_REVOKED,
+    CERTIFICATE_EXPIRED,
+    CERTIFICATE_UNKNOWN,
+    ILLEGAL_PARAMETER,
+    UNKNOWN_CA,
+    ACCESS_DENIED,
+    DECODE_ERROR,
+    DECRYPT_ERROR,
+    EXPORT_RESTRICTION_RESERVED,
+    PROTOCOL_VERSION,
+    INSUFFICIENT_SECURITY,
+    INTERNAL_ERROR,
+    USER_CANCELED,
+    NO_RENEGOTIATION,
+    UNSUPPORTED_EXTENSION
+  } = AlertDescription
+
+  switch (desc) {
+    case CLOSE_NOTIFY:
+      return 'close_notify'
+    case UNEXPECTED_MESSAGE:
+      return 'unexpected_message'
+    case BAD_RECORD_MAC:
+      return 'bad_record_mac'
+    case DECRYPTION_FAILED_RESERVED:
+      return 'decryption_failed_reserved'
+    case RECORD_OVERFLOW:
+      return 'record_overflow'
+    case DECOMPRESSION_FAILURE:
+      return 'decompression_failure'
+    case HANDSHAKE_FAILURE:
+      return 'handshake_failure'
+    case NO_CERTIFICATE_RESERVED:
+      return 'no_certificate_reserved'
+    case BAD_CERTIFICATE:
+      return 'bad_certificate'
+    case UNSUPPORTED_CERTIFICATE:
+      return 'unsupported_certificate'
+    case CERTIFICATE_REVOKED:
+      return 'certificate_revoked'
+    case CERTIFICATE_EXPIRED:
+      return 'certificate_expired'
+    case CERTIFICATE_UNKNOWN:
+      return 'certificate_unknown'
+    case ILLEGAL_PARAMETER:
+      return 'illegal_parameter'
+    case UNKNOWN_CA:
+      return 'unknown_ca'
+    case ACCESS_DENIED:
+      return 'access_denied'
+    case DECODE_ERROR:
+      return 'decode_error'
+    case DECRYPT_ERROR:
+      return 'decrypt_error'
+    case EXPORT_RESTRICTION_RESERVED:
+      return 'export_restriction_reserved'
+    case PROTOCOL_VERSION:
+      return 'protocol_version'
+    case INSUFFICIENT_SECURITY:
+      return 'insufficient_security'
+    case INTERNAL_ERROR:
+      return 'internal_error'
+    case USER_CANCELED:
+      return 'user_canceled'
+    case NO_RENEGOTIATION:
+      return 'no_renegotiation'
+    case UNSUPPORTED_EXTENSION:
+      return 'unsupported_extension'
+    default: // description may be extended by other spec
+      return 'unknown_alert_description'
+  }
+}
+
+/**
+ * TLSError represents an error in tls protocol handling,
+ * such as decoding or decryption error, malformatted message
+ * or illegal value. It is not used for error emitted from
+ * dependent components, such as socket error or file system error.
+ *
+ * TLSError has no error code defined.
+ */
+class TLSError extends Error {
+  /**
+   * constructs a TLSError.
+   *
+   * If `msg` is an Error, TLSError preserves its properties, including 
+   * message and stack. If `msg` is string, it is used as error message.
+   * If `msg` is not provided, TLSError use the alert description name as
+   * error message. 
+   *
+   * @param {number} desc - alert description
+   * @param {string|Error} [msg] - error or error message
+   */
+  constructor (desc, msg) {
+    if (msg instanceof Error) {
+      super(msg.message)
+      Object.assign(this, msg)
+      this.stack = msg.stack
+    } else {
+      super(msg || alertDescription(desc))
+    }
+
+    this.name = this.name || this.constructor.name
+    
+    /** alert level */     
+    this.level = AlertLevel.FATAL
+    /** alert description */
+    this.description = desc
+  }
+}
+
+/**
+ * TLSAlert represents a tls alert received from the other party.
+ *
+ * TLSAlert has no error code defined.
+ */
+class TLSAlert extends Error {
+  /**
+   * constructs a TLSAlert
+   * @param {number} desc - alert description
+   * @param {number} [level] - alter level, defauts to `FATAL`
+   */
+  constructor (desc, level = AlertLevel.FATAL) {
+    super(alertDescription(desc))
+    this.name = this.constructor.name
+
+    /** alert level */
+    this.level = level
+    /** alert description */
+    this.description = desc
+  }
+}
+
+
 
 /**
  * HandshakeContext stores data and states for handshake stage,
@@ -528,7 +593,11 @@ class HandshakeContext {
     })
   }
 
-  /** push a handshake message into buffer */
+  /** 
+   * push a handshake message into buffer 
+   * @param {string} from - either `client` or `server`
+   * @param {buffer} msg - message data
+   */
   push (from, msg) {
     if (from !== 'server' && from !== 'client') {
       throw new Error('invalid parameter')
@@ -551,6 +620,8 @@ class HandshakeContext {
    * assert last handshake message from and type
    */
   assertLast (from, type) {
+    const { UNEXPECTED_MESSAGE } = AlertDescription
+
     if (from !== 'server' && from !== 'client') {
       throw new Error('invalid parameter')
     }
@@ -588,6 +659,10 @@ class HandshakeContext {
         (sum + BigInt(c) << (BigInt(8) * BigInt(i))), BigInt(0))
   }
 
+  /**
+   * set server random and derives keys
+   * @param {buffer} random - server random
+   */
   setServerRandom (random) {
     this.serverRandom = random
     this.deriveKeys()
@@ -598,14 +673,23 @@ class HandshakeContext {
     return PRF256(this.masterSecret, 'client finished', this.digest(), 12)
   }
 
-  /**
-   * generates server verify data
-   * (used in verifying server Finsihed message)
-   */
+  /** generates verify data in server Finsihed message */
   serverVerifyData () {
     return PRF256(this.masterSecret, 'server finished', this.digest(), 12)
   }
 }
+
+/**
+ * @typedef {object} Fragment
+ * @property {number} type - content type
+ * @property {Buffer} data - fragment data
+ */
+
+/**
+ * @typedef {object} Message
+ * @property {number} type - content type
+ * @property {Buffer} data - message data (no fragment)
+ */
 
 /**
  * telsa state, connecting
@@ -818,6 +902,8 @@ class Telsa extends Duplex {
    * @returns {Fragment} the record type and payload
    */
   readFragment () {
+    const { DECODE_ERROR, RECORD_OVERFLOW } = AlertDescription
+
     if (this.incomming.length < 1) return
     const type = this.incomming[0]
     if (type < 20 || type > 23) {
@@ -856,6 +942,7 @@ class Telsa extends Duplex {
    * @returns {Fragment}
    */
   shiftFragment (size) {
+    const { DECODE_ERROR } = AlertDescription
     if (!this.fragment || this.fragment.data.length < size) {
       throw new TLSError(DECODE_ERROR, 'bad fragment size')
     }
@@ -877,6 +964,8 @@ class Telsa extends Duplex {
    * @returns {Message}
    */
   readMessageFromFragment () {
+    const { DECODE_ERROR } = AlertDescription
+
     if (!this.fragment) return
     switch (this.fragment.type) {
       case ContentType.ALERT:
@@ -902,6 +991,8 @@ class Telsa extends Duplex {
    * @returns {Message}
    */
   readMessage () {
+    const { DECODE_ERROR } = AlertDescription
+
     while (true) {
       const msg = this.readMessageFromFragment()
       if (msg) return msg
@@ -940,6 +1031,8 @@ class Telsa extends Duplex {
    * @param {Buffer} data - socket data
    */
   handleSocketData (data) {
+    const { DECODE_ERROR } = AlertDescription
+
     this.incomming = Buffer.concat([this.incomming, data])
     while (true) {
       const msg = this.readMessage()
@@ -969,14 +1062,16 @@ class Telsa extends Duplex {
    * @param {Buffer} data
    */
   handleAlert (data) {
+    const { DECODE_ERROR, CLOSE_NOTIFY } = AlertDescription
+
     const level = data[0]
     const desc = data[1]
 
-    if (level !== WARNING && level !== FATAL) {
+    if (level !== AlertLevel.WARNING && level !== AlertLevel.FATAL) {
       throw new TLSError(DECODE_ERROR, 'bad alert level')
     }
 
-    if (level === FATAL || desc === CLOSE_NOTIFY) {
+    if (level === AlertLevel.FATAL || desc === CLOSE_NOTIFY) {
       throw new TLSAlert(desc, level)
     } else {
       // TODO console.log(`tls server alert: ${alertDescription(desc)}`)
@@ -988,7 +1083,7 @@ class Telsa extends Duplex {
     if (expect !== actual) {
       // TODO literal message type
       console.log('bad bad bad')
-      throw new TLSError(UNEXPECTED_MESSAGE)
+      throw new TLSError(AlertDescription.UNEXPECTED_MESSAGE)
     }
   }
 
@@ -1009,6 +1104,8 @@ class Telsa extends Duplex {
       CLIENT_KEY_EXCHANGE,
       FINISHED
     } = HandshakeType
+
+    const { UNEXPECTED_MESSAGE, DECODE_ERROR } = AlertDescription
 
     const type = msg[0]
     const data = msg.slice(4)
@@ -1089,6 +1186,7 @@ class Telsa extends Duplex {
    */
   handleServerHello (data) {
     const shift = size => K(data.slice(0, size))(data = data.slice(size))
+    const { ILLEGAL_PARAMETER } = AlertDescription
 
     const ProtocolVersion = shift(2)
     if (!ProtocolVersion.equals(VER12)) {
@@ -1136,6 +1234,11 @@ class Telsa extends Duplex {
    */
   handleCertificate (data) {
     const shift = size => K(data.slice(0, size))(data = data.slice(size))
+    const {
+      DECODE_ERROR, BAD_CERTIFICATE,
+      UNSUPPORTED_CERTIFICATE, ILLEGAL_PARAMETER, CERTIFICATE_UNKNOWN,
+      UNKNOWN_CA
+    } = AlertDescription
 
     if (data.length < 3 || readUInt24(shift(3)) !== data.length) {
       throw new TLSError(DECODE_ERROR, 'invalid message length')
@@ -1211,6 +1314,7 @@ class Telsa extends Duplex {
    */
   handleCertificateRequest (data) {
     const shift = size => K(data.slice(0, size))(data = data.slice(size))
+    const { DECODE_ERROR } = AlertDescription
 
     if (data.length < 1 || data[0] + 1 > data.length) {
       throw new TLSError(DECODE_ERROR, 'invalid length')
@@ -1250,7 +1354,8 @@ class Telsa extends Duplex {
    */
   handleServerHelloDone (data) {
     if (data.length) {
-      throw new TLSError(DECODE_ERROR, 'invalid server hello done')
+      throw new TLSError(AlertDescription.DECODE_ERROR,
+        'invalid ServerHelloDone')
     }
   }
 
@@ -1268,7 +1373,8 @@ class Telsa extends Duplex {
   handleServerFinished (data) {
     const verifyData = this.hs.serverVerifyData()
     if (!data.equals(verifyData)) {
-      throw new TLSError(DECRYPT_ERROR, 'verified failed')
+      throw new TLSError(AlertDescription.DECRYPT_ERROR,
+        'failed to verify server Finished')
     }
 
     process.nextTick(() => {
@@ -1481,6 +1587,11 @@ class Telsa extends Duplex {
   terminate (reason, err) {
     console.log('  terminate', this.state, reason, err && err.message)
 
+    const {
+      CLOSE_NOTIFY, USER_CANCELED,
+      INTERNAL_ERROR
+    } = AlertDescription
+
     // redefine close_notify
     if (reason === 'alert' && err.description === CLOSE_NOTIFY) {
       reason = 'close_notify'
@@ -1491,20 +1602,20 @@ class Telsa extends Duplex {
     try {
       if ((reason === 'final' || reason === 'destroy') &&
         this.state === HANDSHAKING) {
-        this.sendAlert(WARNING, USER_CANCELED)
+        this.sendAlert(AlertLevel.WARNING, USER_CANCELED)
       }
 
       if (reason === 'final' ||
         reason === 'destroy' ||
         reason === 'close_notify') {
-        this.sendAlert(WARNING, CLOSE_NOTIFY)
+        this.sendAlert(AlertLevel.WARNING, CLOSE_NOTIFY)
       }
 
       if (reason === 'error') {
         if (err instanceof TLSError) {
-          this.sendAlert(FATAL, err.description)
+          this.sendAlert(AlertLevel.FATAL, err.description)
         } else {
-          this.sendAlert(FATAL, INTERNAL_ERROR)
+          this.sendAlert(AlertLevel.FATAL, INTERNAL_ERROR)
         }
       }
     } catch (e) { }

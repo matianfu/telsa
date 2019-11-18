@@ -8,7 +8,7 @@
     "test": "test"
   },
   "scripts": {
-    "doc": "jsdoc lib/tls.js -d ./docs -r ./docs/readme.md",
+    "doc": "jsdoc src/telsa.js -d ./docs/source -c jsdoc-md.json",
     "test": "test"
   },
   "repository": {
