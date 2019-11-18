@@ -3,7 +3,7 @@ const Telsa = require('../src/telsa')
 
 const cert = fs.readFileSync('./certs/1f7394c39a-certificate.pem.crt')
 const key = fs.readFileSync('./certs/1f7394c39a-private.pem.key')
-const ca = fs.readFileSync('./certs/AmazonRootCA3.pem')
+const ca = fs.readFileSync('./certs/AmazonRootCA1.pem')
 
 let conn = new Telsa({ 
   port: 8883,
