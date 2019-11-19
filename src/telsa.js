@@ -6,7 +6,7 @@ const {
   createDecipheriv, publicEncrypt, randomFillSync, constants
 } = crypto
 
-const { concat, from } = Buffer
+const { alloc, concat, from } = Buffer
 const { asn1, pki } = require('node-forge')
 
 /**
@@ -40,7 +40,7 @@ const readUInt24 = buf => buf[0] * 65536 + buf[1] * 256 + buf[2]
  * @param {buffer} b
  * @returns {buffer}
  */
-const Prepend16 = b => concat([from([b.length >> 8, b.length]), b])
+const prepend16 = b => concat([from([b.length >> 8, b.length]), b])
 
 /**
  * prepends 3-byte length to given buffer
@@ -48,16 +48,8 @@ const Prepend16 = b => concat([from([b.length >> 8, b.length]), b])
  * @param {buffer} b
  * @returns {buffer}
  */
-const Prepend24 = b => 
+const prepend24 = b =>
   concat([from([b.length >> 16, b.length >> 8, b.length]), b])
-
-/**
- * generates a buffer with given size and filled with random bytes
- * @function
- * @param {number} size
- * @returns {buffer}
- */
-const randomBuffer = size => randomFillSync(Buffer.alloc(size))
 
 /**
  * calculates sha256 digest
@@ -151,7 +143,7 @@ const createCipher = (key, macKey, _iv) => {
   const SN = createSequenceNumber()
   return (type, data) => {
     const iv = SHA256((++_iv).toString()).slice(0, 16)
-    const tbs = concat([SN(), from([type]), VER12, Prepend16(data)])
+    const tbs = concat([SN(), from([type]), VER12, prepend16(data)])
     const mac = HMAC1(macKey, tbs)
     const len = 16 - (data.length + mac.length) % 16
     const pad = Buffer.alloc(len, len - 1)
@@ -198,7 +190,7 @@ const createDecipher = (key, macKey) => {
     }
     data = dec.slice(0, dec.length - len - 20)
     const smac = dec.slice(dec.length - len - 20, dec.length - len)
-    const tbs = concat([SN(), from([type]), VER12, Prepend16(data)])
+    const tbs = concat([SN(), from([type]), VER12, prepend16(data)])
     const cmac = HMAC1(macKey, tbs)
 
     if (!smac.equals(cmac)) throw new Error('mac mismatch')
@@ -511,34 +503,6 @@ class TLSAlert extends Error {
  */
 
 /**
- * telsa state, connecting
- * @constant
- * @type {string}
- */
-const CONNECTING = 'Connecting'
-
-/**
- * telsa state, handshaking
- * @constant
- * @type {string}
- */
-const HANDSHAKING = 'Handshaking'
-
-/**
- * telsa state, established
- * @constant
- * @type {string}
- */
-const ESTABLISHED = 'Established'
-
-/**
- * telsa state, terminated
- * @constant
- * @type {string}
- */
-const TERMINATED = 'Terminated'
-
-/**
  * #### States
  *
  * Telsa has four internal states:
@@ -630,11 +594,11 @@ class Telsa extends Duplex {
     /** session id */
     this.sessionId = 0
     /** client random */
-    this.clientRandom = randomBuffer(32)
+    this.clientRandom = randomFillSync(alloc(32))
     /** server random */
     this.serverRandom = undefined
     /** pre-master secret */
-    this.preMasterSecret = concat([VER12, randomBuffer(46)])
+    this.preMasterSecret = concat([VER12, randomFillSync(alloc(46))])
     /** master secret */
     this.masterSecret = undefined
     /** client write mac key */
@@ -663,7 +627,7 @@ class Telsa extends Duplex {
      */
     this.socket = this.opts.socket || net.createConnection(opts)
     this.socket.on('connect', () => {
-      this.state = HANDSHAKING
+      this.state = 'HANDSHAKING'
 
       /**
        * handshake context
@@ -683,7 +647,7 @@ class Telsa extends Duplex {
     })
 
     this.socket.on('error', err => this.terminate('socket', err))
-    this.state = CONNECTING
+    this.state = 'CONNECTING'
   }
 
   /**
@@ -906,13 +870,13 @@ class Telsa extends Duplex {
 
   /** generates client verify data in client Finished message */
   clientVerifyData () {
-    return PRF256(this.masterSecret, 'client finished', 
+    return PRF256(this.masterSecret, 'client finished',
       SHA256(concat(this.msgs)), 12)
   }
 
   /** generates server verify data in server Finsihed message */
   serverVerifyData () {
-    return PRF256(this.masterSecret, 'server finished', 
+    return PRF256(this.masterSecret, 'server finished',
       SHA256(concat(this.msgs)), 12)
   }
 
@@ -921,16 +885,16 @@ class Telsa extends Duplex {
    */
   changeCipherSpec () {
     this.sendChangeCipherSpec()
-    this.cipher = createCipher(this.clientWriteKey, 
+    this.cipher = createCipher(this.clientWriteKey,
       this.clientWriteMacKey, this.iv)
   }
 
   /**
    * set decipher
    */
-//  serverChangeCipherSpec (key, macKey) {
-//    this.decipher = createDecipher(key, macKey)
-//  }
+  //  serverChangeCipherSpec (key, macKey) {
+  //    this.decipher = createDecipher(key, macKey)
+  //  }
 
   /**
    * handle socket data
@@ -1039,7 +1003,7 @@ class Telsa extends Duplex {
         this.sendClientKeyExchange()
         this.sign((err, sig) => {
           try {
-            if (this.state === TERMINATED) return
+            if (this.state === 'TERMINATED') return
             if (err) throw err
             this.assertLast('client', CLIENT_KEY_EXCHANGE)
             this.sendCertificateVerify(sig)
@@ -1250,9 +1214,9 @@ class Telsa extends Duplex {
    * struct { } ServerHelloDone;
    */
   handleServerHelloDone (data) {
+    const { DECODE_ERROR } = AlertDescription
     if (data.length) {
-      throw new TLSError(AlertDescription.DECODE_ERROR,
-        'invalid ServerHelloDone')
+      throw new TLSError(DECODE_ERROR, 'invalid ServerHelloDone')
     }
   }
 
@@ -1276,7 +1240,7 @@ class Telsa extends Duplex {
 
     process.nextTick(() => {
       // set state
-      this.state = ESTABLISHED
+      this.state = 'ESTABLISHED'
 
       // TODO console.log('telsa entering Established state')
 
@@ -1323,7 +1287,7 @@ class Telsa extends Duplex {
    */
   send (type, data) {
     if (this.cipher) data = this.cipher(type, data)
-    const record = concat([from([type]), VER12, Prepend16(data)])
+    const record = concat([from([type]), VER12, prepend16(data)])
     return this.socket.write(record)
   }
 
@@ -1347,7 +1311,7 @@ class Telsa extends Duplex {
    */
   sendHandshakeMessage (type, data) {
     console.log('<- ' + handshakeType(type))
-    data = concat([from([type]), Prepend24(data)])
+    data = concat([from([type]), prepend24(data)])
     this.saveMessage('client', data)
     return this.send(ContentType.HANDSHAKE, data)
   }
@@ -1372,8 +1336,8 @@ class Telsa extends Duplex {
    */
   sendClientCertificate () {
     this.sendHandshakeMessage(HandshakeType.CERTIFICATE,
-      Prepend24(concat([
-        ...this.opts.clientCertificates.map(c => Prepend24(c))])))
+      prepend24(concat([
+        ...this.opts.clientCertificates.map(c => prepend24(c))])))
   }
 
   /**
@@ -1382,7 +1346,7 @@ class Telsa extends Duplex {
    */
   sendClientKeyExchange () {
     this.sendHandshakeMessage(HandshakeType.CLIENT_KEY_EXCHANGE,
-      Prepend16(publicEncrypt({
+      prepend16(publicEncrypt({
         key: this.serverPublicKey,
         padding: RSA_PKCS1_PADDING
       }, this.preMasterSecret)))
@@ -1407,14 +1371,14 @@ class Telsa extends Duplex {
    */
   sendCertificateVerify (sig) {
     this.sendHandshakeMessage(HandshakeType.CERTIFICATE_VERIFY,
-      concat([RSA_PKCS1_SHA256, Prepend16(sig)]))
+      concat([RSA_PKCS1_SHA256, prepend16(sig)]))
   }
 
   /**
    * send Finished handshake message
    */
   sendFinished () {
-    this.sendHandshakeMessage(HandshakeType.FINISHED, 
+    this.sendHandshakeMessage(HandshakeType.FINISHED,
       this.clientVerifyData())
   }
 
@@ -1431,18 +1395,18 @@ class Telsa extends Duplex {
   _write (chunk, encoding, callback) {
     switch (this.state) {
       // fallthrough
-      case CONNECTING:
-      case HANDSHAKING:
+      case 'CONNECTING':
+      case 'HANDSHAKING':
         this.writing = { chunk, encoding, callback }
         break
-      case ESTABLISHED:
+      case 'ESTABLISHED':
         if (this.sendApplicationData(chunk)) {
           callback()
         } else {
           this.writing = { callback }
         }
         break
-      case TERMINATED:
+      case 'TERMINATED':
         callback(new Error('This socket has been terminated'))
         break
       default:
@@ -1463,7 +1427,7 @@ class Telsa extends Duplex {
 
   /** implement Duplex _read */
   _read (size) {
-    if (this.state === ESTABLISHED) this.socket.resume()
+    if (this.state === 'ESTABLISHED') this.socket.resume()
   }
 
   /**
@@ -1495,7 +1459,7 @@ class Telsa extends Duplex {
     // send alert if socket available
     try {
       if ((reason === 'final' || reason === 'destroy') &&
-        this.state === HANDSHAKING) {
+        this.state === 'HANDSHAKING') {
         this.sendAlert(AlertLevel.WARNING, USER_CANCELED)
       }
 
@@ -1539,9 +1503,9 @@ class Telsa extends Duplex {
     // 1. handshaking
     // 2. draining write
     if (reason === 'close_notify') {
-      if (this.state === HANDSHAKING) {
+      if (this.state === 'HANDSHAKING') {
         err = new Error('server close')
-      } else if (this.state === ESTABLISHED && callback) {
+      } else if (this.state === 'ESTABLISHED' && callback) {
         err = new Error('socket has been ended by the other party')
         err.code = 'EPIPE'
       }
@@ -1549,9 +1513,9 @@ class Telsa extends Duplex {
 
     // over-simplified TODO
     if (err && !err.code) {
-      if (this.state === HANDSHAKING) {
+      if (this.state === 'HANDSHAKING') {
         err.code = 'ERR_TLS_HANDSHAKE_FAILED'
-      } else if (this.state === ESTABLISHED) {
+      } else if (this.state === 'ESTABLISHED') {
         err.code = 'ERR_TLS_CONNECTION_FAILED'
       }
     }
