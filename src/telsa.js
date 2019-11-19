@@ -10,21 +10,10 @@ const { concat, from } = Buffer
 const { asn1, pki } = require('node-forge')
 
 /**
- * TODO
- * ```
- * RFC 4346, TLS v1.1, page 28
- * Note: Differentiating between bad_record_mac and decryption_failed
- *       alerts may permit certain attacks against CBC mode as used in
- *       TLS [CBCATT].  It is preferable to uniformly use the
- *       bad_record_mac alert to hide the specific type of the error.
- * ```
- */
-
-/** 
  * K combinator is a higher-order function which accepts two
- * expressions `x` and `y`. It evalutes `x` then `y` and 
+ * expressions `x` and `y`. It evalutes `x` then `y` and
  * returns `x` finally. It is helpful for compact code.
- * @function 
+ * @function
  */
 const K = x => y => x
 
@@ -38,30 +27,6 @@ const RSA_PKCS1_SHA256 = from([0x04, 0x01])
 const RSA_PKCS1_PADDING = constants.RSA_PKCS1_PADDING
 
 /**
- * convert a uint8 number to a 1-byte buffer
- * @function
- * @param {number} i
- * @returns {buffer}
- */
-const UInt8 = i => from([i])
-
-/**
- * convert a uint16 number to a 2-byte buffer
- * @function
- * @param {number} i
- * @returns {buffer}
- */
-const UInt16 = i => from([i >> 8, i])
-
-/**
- * converts a uint24 number to a 3-byte buffer
- * @function
- * @param {number} i
- * @returns {buffer}
- */
-const UInt24 = i => from([i >> 16, i >> 8, i])
-
-/**
  * reads a uint24 number from the first 3-byte of a buffer
  * @function
  * @param {buffer} buf
@@ -70,20 +35,12 @@ const UInt24 = i => from([i >> 16, i >> 8, i])
 const readUInt24 = buf => buf[0] * 65536 + buf[1] * 256 + buf[2]
 
 /**
- * prepends 1-byte length to given buffer
- * @function
- * @param {buffer} b
- * @returns {buffer}
- */
-const Prepend8 = b => concat([UInt8(b.length), b])
-
-/**
  * prepends 2-byte length to given buffer
  * @function
  * @param {buffer} b
  * @returns {buffer}
  */
-const Prepend16 = b => concat([UInt16(b.length), b])
+const Prepend16 = b => concat([from([b.length >> 8, b.length]), b])
 
 /**
  * prepends 3-byte length to given buffer
@@ -91,7 +48,8 @@ const Prepend16 = b => concat([UInt16(b.length), b])
  * @param {buffer} b
  * @returns {buffer}
  */
-const Prepend24 = b => concat([UInt24(b.length), b])
+const Prepend24 = b => 
+  concat([from([b.length >> 16, b.length >> 8, b.length]), b])
 
 /**
  * generates a buffer with given size and filled with random bytes
@@ -193,7 +151,7 @@ const createCipher = (key, macKey, _iv) => {
   const SN = createSequenceNumber()
   return (type, data) => {
     const iv = SHA256((++_iv).toString()).slice(0, 16)
-    const tbs = concat([SN(), UInt8(type), VER12, Prepend16(data)])
+    const tbs = concat([SN(), from([type]), VER12, Prepend16(data)])
     const mac = HMAC1(macKey, tbs)
     const len = 16 - (data.length + mac.length) % 16
     const pad = Buffer.alloc(len, len - 1)
@@ -204,6 +162,9 @@ const createCipher = (key, macKey, _iv) => {
 
 /**
  * A decipher function decrypts a tls record.
+ * This function does NOT throw TLSError. The caller is resposible
+ * for translating the thrown error to TLSError.
+ *
  * @typedef DecipherFunction
  * @type {function}
  * @param { type - tls record type
@@ -221,38 +182,26 @@ const createCipher = (key, macKey, _iv) => {
  * @returns {DecipherFunction}
  */
 const createDecipher = (key, macKey) => {
-  const { DECRYPTION_FAILED_RESERVED, BAD_RECORD_MAC } = AlertDescription
-
   const SN = createSequenceNumber()
   return (type, data) => {
     const iv = data.slice(0, 16)
     const d = createDecipheriv('aes-128-cbc', key, iv).setAutoPadding(false)
-
-    let u, f
-    try {
-      u = d.update(data.slice(16))
-      f = d.final()
-    } catch (e) {
-      throw new TLSError(DECRYPTION_FAILED_RESERVED)
-    }
-    const dec = concat([u, f])
+    const dec = concat([d.update(data.slice(16)), d.final()])
 
     const len = dec[dec.length - 1] + 1
     if (dec.length < len) {
-      throw new TLSError(DECRYPTION_FAILED_RESERVED, 'bad padding')
+      throw new Error('bad padding')
     }
     const pad = dec.slice(dec.length - len)
     if (!pad.equals(Buffer.alloc(len, len - 1))) {
-      throw new TLSError(DECRYPTION_FAILED_RESERVED, 'bad padding')
+      throw new Error('bad padding')
     }
     data = dec.slice(0, dec.length - len - 20)
     const smac = dec.slice(dec.length - len - 20, dec.length - len)
-    const tbs = concat([SN(), UInt8(type), VER12, Prepend16(data)])
+    const tbs = concat([SN(), from([type]), VER12, Prepend16(data)])
     const cmac = HMAC1(macKey, tbs)
 
-    if (!smac.equals(cmac)) {
-      throw new TLSError(BAD_RECORD_MAC)
-    }
+    if (!smac.equals(cmac)) throw new Error('mac mismatch')
     return data
   }
 }
@@ -500,10 +449,10 @@ class TLSError extends Error {
   /**
    * constructs a TLSError.
    *
-   * If `msg` is an Error, TLSError preserves its properties, including 
+   * If `msg` is an Error, TLSError preserves its properties, including
    * message and stack. If `msg` is string, it is used as error message.
    * If `msg` is not provided, TLSError use the alert description name as
-   * error message. 
+   * error message.
    *
    * @param {number} desc - alert description
    * @param {string|Error} [msg] - error or error message
@@ -518,8 +467,8 @@ class TLSError extends Error {
     }
 
     this.name = this.name || this.constructor.name
-    
-    /** alert level */     
+
+    /** alert level */
     this.level = AlertLevel.FATAL
     /** alert description */
     this.description = desc
@@ -548,8 +497,6 @@ class TLSAlert extends Error {
     this.description = desc
   }
 }
-
-
 
 /**
  * HandshakeContext stores data and states for handshake stage,
@@ -594,8 +541,8 @@ class HandshakeContext {
     })
   }
 
-  /** 
-   * push a handshake message into buffer 
+  /**
+   * push a handshake message into buffer
    * @param {string} from - either `client` or `server`
    * @param {buffer} msg - message data
    */
@@ -718,7 +665,7 @@ const ESTABLISHED = 'Established'
  * @constant
  * @type {string}
  */
-const TERMINATED = 'Disconnected'
+const TERMINATED = 'Terminated'
 
 /**
  * #### States
@@ -798,6 +745,33 @@ class Telsa extends Duplex {
     this.writing = null
 
     /**
+     * incomming data buffer, may contain fragmented records.
+     * @type {Buffer}
+     */
+    this.incomming = Buffer.alloc(0)
+
+    /**
+     * current fragment, contains 0, 1 or more records of the same type.
+     * @type {Fragment|null}
+     */
+    this.fragment = null
+
+    /**
+     * saved handshake messages
+     */
+    this.msgs = []
+
+    /**
+     * @type {CipherFunction}
+     */
+    this.cipher = null
+
+    /**
+     * @type {DecipherFunction}
+     */
+    this.decipher = null
+
+    /**
      * tcp connection
      * @type {net.Socket}
      */
@@ -806,32 +780,11 @@ class Telsa extends Duplex {
       this.state = HANDSHAKING
 
       /**
-       * incomming data buffer, may contain fragmented records.
-       * @type {Buffer}
-       */
-      this.incomming = Buffer.alloc(0)
-
-      /**
-       * current fragment, contains 0, 1 or more records of the same type.
-       * @type {Fragment}
-       */
-      this.fragment = null
-
-      /**
        * handshake context
        * @type {HandshakeContext}
        */
       this.hs = new HandshakeContext()
 
-      /**
-       * @type {CipherFunction}
-       */
-      this.cipher = null
-
-      /**
-       * @type {DecipherFunction}
-       */
-      this.decipher = null
 
       this.socket.on('close', () => this.terminate('socket'))
       this.socket.on('data', data => {
@@ -878,7 +831,11 @@ class Telsa extends Duplex {
    * @returns {Fragment} the record type and payload
    */
   readFragment () {
-    const { DECODE_ERROR, RECORD_OVERFLOW } = AlertDescription
+    const {
+      DECODE_ERROR,
+      RECORD_OVERFLOW,
+      BAD_RECORD_MAC
+    } = AlertDescription
 
     if (this.incomming.length < 1) return
     const type = this.incomming[0]
@@ -908,7 +865,22 @@ class Telsa extends Duplex {
     let data = this.incomming.slice(5, 5 + length)
     this.incomming = this.incomming.slice(5 + length)
 
-    if (this.decipher) data = this.decipher(type, data)
+    if (this.decipher) {
+      try {
+        data = this.decipher(type, data)
+      } catch (e) {
+        /**
+         * ```
+         * RFC 4346, TLS v1.1, page 28
+         * Note: Differentiating between bad_record_mac and decryption_failed
+         *       alerts may permit certain attacks against CBC mode as used in
+         *       TLS [CBCATT].  It is preferable to uniformly use the
+         *       bad_record_mac alert to hide the specific type of the error.
+         * ```
+         */
+        throw new TLSError(BAD_RECORD_MAC, e)
+      }
+    }
 
     return { type, data }
   }
@@ -984,6 +956,18 @@ class Telsa extends Duplex {
         this.fragment = frag
       }
     }
+  }
+
+  /**
+   * save handshake message
+   */
+  saveHandshakeMessage (from, msg) {
+    if (from !== 'server' && from !== 'client') {
+      throw new Error('invalid parameter')
+    }
+    msg.from = from
+    this.msgs.push(msg)
+    this.hs.push(from, msg)
   }
 
   /**
@@ -1405,7 +1389,7 @@ class Telsa extends Duplex {
    */
   send (type, data) {
     if (this.cipher) data = this.cipher(type, data)
-    const record = concat([UInt8(type), VER12, Prepend16(data)])
+    const record = concat([from([type]), VER12, Prepend16(data)])
     return this.socket.write(record)
   }
 
@@ -1429,7 +1413,7 @@ class Telsa extends Duplex {
    */
   sendHandshakeMessage (type, data) {
     console.log('<- ' + handshakeType(type))
-    data = concat([UInt8(type), Prepend24(data)])
+    data = concat([from([type]), Prepend24(data)])
     this.hs.push('client', data)
     return this.send(ContentType.HANDSHAKE, data)
   }
