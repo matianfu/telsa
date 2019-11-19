@@ -1,1 +1,1 @@
-module.exports = require('./lib/tls')
+module.exports = require('./src/telsa')
