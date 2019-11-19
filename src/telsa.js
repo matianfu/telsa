@@ -499,135 +499,6 @@ class TLSAlert extends Error {
 }
 
 /**
- * HandshakeContext stores data and states for handshake stage,
- * including:
- * - all sent and received messages (except HELLO_REQUEST)
- * - client and server random
- * - pre-master secret and master secret
- * - encryption key and mac key for both client and server
- */
-class HandshakeContext {
-  /** constructs handshake context */
-  constructor () {
-    /** cache all handshake messages except HELLO_REQUEST */
-    this.buffer = []
-    /** session id */
-    this.sessionId = 0
-    /** client random */
-    this.clientRandom = randomBuffer(32)
-    /** server random */
-    this.serverRandom = undefined
-    /** pre-master secret */
-    this.preMasterSecret = concat([VER12, randomBuffer(46)])
-    /** master secret */
-    this.masterSecret = undefined
-    /** client write mac key */
-    this.clientWriteMacKey = undefined
-    /** server write mac key */
-    this.serverWriteMacKey = undefined
-    /** client key */
-    this.clientWriteKey = undefined
-    /** server key */
-    this.serverWriteKey = undefined
-
-    Object.defineProperty(this, 'last', {
-      get () {
-        if (this.buffer.length) {
-          return this.buffer[this.buffer.length - 1]
-        } else {
-          return Buffer.from([255])
-        }
-      }
-    })
-  }
-
-  /**
-   * push a handshake message into buffer
-   * @param {string} from - either `client` or `server`
-   * @param {buffer} msg - message data
-   */
-  push (from, msg) {
-    if (from !== 'server' && from !== 'client') {
-      throw new Error('invalid parameter')
-    }
-    msg.from = from
-    this.buffer.push(msg)
-  }
-
-  /** returns to-be-signed data */
-  tbs () {
-    return concat(this.buffer)
-  }
-
-  /** returns SHA256 digest for to-be-signed data */
-  digest () {
-    return SHA256(this.tbs())
-  }
-
-  /**
-   * assert last handshake message from and type
-   */
-  assertLast (from, type) {
-    const { UNEXPECTED_MESSAGE } = AlertDescription
-
-    if (from !== 'server' && from !== 'client') {
-      throw new Error('invalid parameter')
-    }
-
-    if (!this.buffer.length) {
-      const msg =
-        `expected ${handshakeType(type)} from ${from}, ` +
-        'actual none'
-      throw new TLSError(UNEXPECTED_MESSAGE, msg)
-    }
-
-    const last = this.buffer[this.buffer.length - 1]
-    if (last.from !== from || last[0] !== type) {
-      const msg =
-        `expected ${handshakeType(type)} from ${from}, ` +
-        `actual ${handshakeType(last[0])} from ${last.from}`
-      throw new TLSError(UNEXPECTED_MESSAGE, msg)
-    }
-  }
-
-  /** derive keys from pre-master secret, client and server random */
-  deriveKeys () {
-    this.masterSecret = PRF256(this.preMasterSecret, 'master secret',
-      concat([this.clientRandom, this.serverRandom]), 48)
-
-    const keys = PRF256(this.masterSecret, 'key expansion',
-      concat([this.serverRandom, this.clientRandom]), 2 * (20 + 16) + 16)
-
-    this.clientWriteMacKey = keys.slice(0, 20)
-    this.serverWriteMacKey = keys.slice(20, 40)
-    this.clientWriteKey = keys.slice(40, 56)
-    this.serverWriteKey = keys.slice(56, 72)
-    this.iv = Array.from(keys.slice(72))
-      .reduce((sum, c, i) =>
-        (sum + BigInt(c) << (BigInt(8) * BigInt(i))), BigInt(0))
-  }
-
-  /**
-   * set server random and derives keys
-   * @param {buffer} random - server random
-   */
-  setServerRandom (random) {
-    this.serverRandom = random
-    this.deriveKeys()
-  }
-
-  /** generates client verify data in client Finished message */
-  clientVerifyData () {
-    return PRF256(this.masterSecret, 'client finished', this.digest(), 12)
-  }
-
-  /** generates server verify data in server Finsihed message */
-  serverVerifyData () {
-    return PRF256(this.masterSecret, 'server finished', this.digest(), 12)
-  }
-}
-
-/**
  * @typedef {object} Fragment
  * @property {number} type - content type
  * @property {Buffer} data - fragment data
@@ -756,14 +627,29 @@ class Telsa extends Duplex {
      */
     this.fragment = null
 
-    /**
-     * saved handshake messages
-     */
+    /** session id */
+    this.sessionId = 0
+    /** client random */
+    this.clientRandom = randomBuffer(32)
+    /** server random */
+    this.serverRandom = undefined
+    /** pre-master secret */
+    this.preMasterSecret = concat([VER12, randomBuffer(46)])
+    /** master secret */
+    this.masterSecret = undefined
+    /** client write mac key */
+    this.clientWriteMacKey = undefined
+    /** server write mac key */
+    this.serverWriteMacKey = undefined
+    /** client key */
+    this.clientWriteKey = undefined
+    /** server key */
+    this.serverWriteKey = undefined
+
+    /** handshake messages */
     this.msgs = []
 
-    /**
-     * @type {CipherFunction}
-     */
+    /** @type {CipherFunction} */
     this.cipher = null
 
     /**
@@ -783,9 +669,6 @@ class Telsa extends Duplex {
        * handshake context
        * @type {HandshakeContext}
        */
-      this.hs = new HandshakeContext()
-
-
       this.socket.on('close', () => this.terminate('socket'))
       this.socket.on('data', data => {
         try {
@@ -961,13 +844,76 @@ class Telsa extends Duplex {
   /**
    * save handshake message
    */
-  saveHandshakeMessage (from, msg) {
+  saveMessage (from, msg) {
     if (from !== 'server' && from !== 'client') {
       throw new Error('invalid parameter')
     }
     msg.from = from
     this.msgs.push(msg)
-    this.hs.push(from, msg)
+  }
+
+  /**
+   * assert last handshake message from and type
+   */
+  assertLast (from, type) {
+    const { UNEXPECTED_MESSAGE } = AlertDescription
+
+    if (from !== 'server' && from !== 'client') {
+      throw new Error('invalid parameter')
+    }
+
+    if (!this.msgs.length) {
+      const msg =
+        `expected ${handshakeType(type)} from ${from}, ` +
+        'actual none'
+      throw new TLSError(UNEXPECTED_MESSAGE, msg)
+    }
+
+    const last = this.msgs[this.msgs.length - 1]
+    if (last.from !== from || last[0] !== type) {
+      const msg =
+        `expected ${handshakeType(type)} from ${from}, ` +
+        `actual ${handshakeType(last[0])} from ${last.from}`
+      throw new TLSError(UNEXPECTED_MESSAGE, msg)
+    }
+  }
+
+  /** derive keys from pre-master secret, client and server random */
+  deriveKeys () {
+    this.masterSecret = PRF256(this.preMasterSecret, 'master secret',
+      concat([this.clientRandom, this.serverRandom]), 48)
+
+    const keys = PRF256(this.masterSecret, 'key expansion',
+      concat([this.serverRandom, this.clientRandom]), 2 * (20 + 16) + 16)
+
+    this.clientWriteMacKey = keys.slice(0, 20)
+    this.serverWriteMacKey = keys.slice(20, 40)
+    this.clientWriteKey = keys.slice(40, 56)
+    this.serverWriteKey = keys.slice(56, 72)
+    this.iv = Array.from(keys.slice(72))
+      .reduce((sum, c, i) =>
+        (sum + BigInt(c) << (BigInt(8) * BigInt(i))), BigInt(0))
+  }
+
+  /**
+   * set server random and derives keys
+   * @param {buffer} random - server random
+   */
+  setServerRandom (random) {
+    this.serverRandom = random
+    this.deriveKeys()
+  }
+
+  /** generates client verify data in client Finished message */
+  clientVerifyData () {
+    return PRF256(this.masterSecret, 'client finished', 
+      SHA256(concat(this.msgs)), 12)
+  }
+
+  /** generates server verify data in server Finsihed message */
+  serverVerifyData () {
+    return PRF256(this.masterSecret, 'server finished', 
+      SHA256(concat(this.msgs)), 12)
   }
 
   /**
@@ -975,16 +921,16 @@ class Telsa extends Duplex {
    */
   changeCipherSpec () {
     this.sendChangeCipherSpec()
-    const { clientWriteKey, clientWriteMacKey, iv } = this.hs
-    this.cipher = createCipher(clientWriteKey, clientWriteMacKey, iv)
+    this.cipher = createCipher(this.clientWriteKey, 
+      this.clientWriteMacKey, this.iv)
   }
 
   /**
    * set decipher
    */
-  serverChangeCipherSpec (key, macKey) {
-    this.decipher = createDecipher(key, macKey)
-  }
+//  serverChangeCipherSpec (key, macKey) {
+//    this.decipher = createDecipher(key, macKey)
+//  }
 
   /**
    * handle socket data
@@ -1038,15 +984,6 @@ class Telsa extends Duplex {
     }
   }
 
-  expectAfter (expect) {
-    const actual = this.hs.last[0]
-    if (expect !== actual) {
-      // TODO literal message type
-      console.log('bad bad bad')
-      throw new TLSError(AlertDescription.UNEXPECTED_MESSAGE)
-    }
-  }
-
   /**
    * handle handshake message
    * @param {Buffer} msg - full message data, including type, length, and body
@@ -1078,33 +1015,33 @@ class Telsa extends Duplex {
       case CLIENT_HELLO:
         throw new TLSError(UNEXPECTED_MESSAGE, 'unexpected client hello')
       case SERVER_HELLO:
-        this.hs.assertLast('client', CLIENT_HELLO)
+        this.assertLast('client', CLIENT_HELLO)
         this.handleServerHello(data)
-        this.hs.push('server', msg)
+        this.saveMessage('server', msg)
         break
       case CERTIFICATE:
-        this.hs.assertLast('server', SERVER_HELLO)
+        this.assertLast('server', SERVER_HELLO)
         this.handleCertificate(data)
-        this.hs.push('server', msg)
+        this.saveMessage('server', msg)
         break
       case SERVER_KEY_EXCHANGE:
         throw new TLSError(UNEXPECTED_MESSAGE, 'unexpected server key exchange')
       case CERTIFICATE_REQUEST:
-        this.hs.assertLast('server', CERTIFICATE)
+        this.assertLast('server', CERTIFICATE)
         this.handleCertificateRequest(data)
-        this.hs.push('server', msg)
+        this.saveMessage('server', msg)
         break
       case SERVER_HELLO_DONE:
-        this.hs.assertLast('server', CERTIFICATE_REQUEST)
+        this.assertLast('server', CERTIFICATE_REQUEST)
         this.handleServerHelloDone(data)
-        this.hs.push('server', msg)
+        this.saveMessage('server', msg)
         this.sendClientCertificate()
         this.sendClientKeyExchange()
         this.sign((err, sig) => {
           try {
             if (this.state === TERMINATED) return
             if (err) throw err
-            this.hs.assertLast('client', CLIENT_KEY_EXCHANGE)
+            this.assertLast('client', CLIENT_KEY_EXCHANGE)
             this.sendCertificateVerify(sig)
             this.changeCipherSpec()
             this.sendFinished()
@@ -1118,9 +1055,9 @@ class Telsa extends Duplex {
       case CLIENT_KEY_EXCHANGE:
         throw new TLSError(UNEXPECTED_MESSAGE, 'unexpected client key exchange')
       case FINISHED:
-        this.hs.assertLast('client', FINISHED)
+        this.assertLast('client', FINISHED)
         this.handleServerFinished(data)
-        this.hs.push('server', msg)
+        this.saveMessage('server', msg)
         break
       default:
         throw new TLSError(DECODE_ERROR, 'bad handshake message type')
@@ -1154,10 +1091,10 @@ class Telsa extends Duplex {
     }
 
     const Random = shift(32)
-    this.hs.setServerRandom(Random)
+    this.setServerRandom(Random)
 
     const SessionId = shift(shift(1)[0])
-    this.hs.sessionId = SessionId
+    this.sessionId = SessionId
 
     const CipherSuite = shift(2)
     if (!CipherSuite.equals(AES_128_CBC_SHA)) {
@@ -1254,7 +1191,7 @@ class Telsa extends Duplex {
       }
 
       if (verified) {
-        this.hs.serverPublicKey = pki.publicKeyToPem(chain[0].publicKey)
+        this.serverPublicKey = pki.publicKeyToPem(chain[0].publicKey)
         return
       }
     }
@@ -1280,14 +1217,14 @@ class Telsa extends Duplex {
       throw new TLSError(DECODE_ERROR, 'invalid length')
     }
 
-    this.hs.certificateTypes = Array.from(shift(shift(1)[0]))
+    this.certificateTypes = Array.from(shift(shift(1)[0]))
 
     if (data.length < 2 || data.readUInt16BE() % 2 ||
       data.readUInt16BE() + 2 > data.length) {
       throw new TLSError(DECODE_ERROR, 'invalid length')
     }
 
-    this.hs.signatureAlgorithms = Array
+    this.signatureAlgorithms = Array
       .from(shift(shift(2).readUInt16BE()))
       .reduce((acc, c, i, arr) =>
         (i % 2) ? [...acc, arr[i - 1] * 256 + c] : acc, [])
@@ -1302,8 +1239,8 @@ class Telsa extends Duplex {
 
     /**
     console.log('CertificateRequest', {
-      ClientCertificateType: this.hs.certificateTypes,
-      SignatureAndHashAlgorithm: this.hs.signatureAlgorithms,
+      ClientCertificateType: this.certificateTypes,
+      SignatureAndHashAlgorithm: this.signatureAlgorithms,
       data
     })
     */
@@ -1331,16 +1268,13 @@ class Telsa extends Duplex {
    * @param {Buffer} data
    */
   handleServerFinished (data) {
-    const verifyData = this.hs.serverVerifyData()
+    const verifyData = this.serverVerifyData()
     if (!data.equals(verifyData)) {
       throw new TLSError(AlertDescription.DECRYPT_ERROR,
         'failed to verify server Finished')
     }
 
     process.nextTick(() => {
-      // exit Handshaking state
-      delete this.hs
-
       // set state
       this.state = ESTABLISHED
 
@@ -1370,8 +1304,8 @@ class Telsa extends Duplex {
     // TODO expect
     // TODO validate
     console.log('  -> ChangeCipherSpec', data)
-    this.serverChangeCipherSpec(this.hs.serverWriteKey,
-      this.hs.serverWriteMacKey)
+    // this.serverChangeCipherSpec(this.serverWriteKey, this.serverWriteMacKey)
+    this.decipher = createDecipher(this.serverWriteKey, this.serverWriteMacKey)
   }
 
   /**
@@ -1414,7 +1348,7 @@ class Telsa extends Duplex {
   sendHandshakeMessage (type, data) {
     console.log('<- ' + handshakeType(type))
     data = concat([from([type]), Prepend24(data)])
-    this.hs.push('client', data)
+    this.saveMessage('client', data)
     return this.send(ContentType.HANDSHAKE, data)
   }
 
@@ -1424,7 +1358,7 @@ class Telsa extends Duplex {
   sendClientHello () {
     this.sendHandshakeMessage(HandshakeType.CLIENT_HELLO, concat([
       VER12,
-      this.hs.clientRandom,
+      this.clientRandom,
       from([0]), // session_id
       from([0x00, 0x02, 0x00, 0x2f]), // cipher_suites
       from([0x01, 0x00]) // compression_methods
@@ -1449,9 +1383,9 @@ class Telsa extends Duplex {
   sendClientKeyExchange () {
     this.sendHandshakeMessage(HandshakeType.CLIENT_KEY_EXCHANGE,
       Prepend16(publicEncrypt({
-        key: this.hs.serverPublicKey,
+        key: this.serverPublicKey,
         padding: RSA_PKCS1_PADDING
-      }, this.hs.preMasterSecret)))
+      }, this.preMasterSecret)))
   }
 
   /**
@@ -1459,7 +1393,7 @@ class Telsa extends Duplex {
    */
   sign (callback) {
     const key = this.opts.clientPrivateKey
-    const tbs = this.hs.tbs()
+    const tbs = concat(this.msgs)
     if (typeof key === 'function') {
       key(tbs, callback)
     } else {
@@ -1480,7 +1414,8 @@ class Telsa extends Duplex {
    * send Finished handshake message
    */
   sendFinished () {
-    this.sendHandshakeMessage(HandshakeType.FINISHED, this.hs.clientVerifyData())
+    this.sendHandshakeMessage(HandshakeType.FINISHED, 
+      this.clientVerifyData())
   }
 
   /**
