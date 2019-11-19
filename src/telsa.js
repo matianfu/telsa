@@ -131,7 +131,7 @@ const createSequenceNumber = () => {
  * A cipher function encrypts a tls record content.
  * @typedef CipherFunction
  * @type {function}
- * @param { type - tls record type
+ * @param {number} type - tls record type
  * @param {buffer} data - tls record data (payload)
  * @returns {buffer} encrypted tls record
  */
@@ -165,7 +165,7 @@ const createCipher = (key, macKey, _iv) => {
  *
  * @typedef DecipherFunction
  * @type {function}
- * @param { type - tls record type
+ * @param {number} type - tls record type
  * @param {buffer} data - encrypted tls record data
  * @returns {buffer} decrypted data (payload), mac verified and stripped
  */
