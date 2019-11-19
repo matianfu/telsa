@@ -11,6 +11,7 @@ const { alloc, concat, from } = Buffer
 const { asn1, pki } = require('node-forge')
 const Debug = require('debug')
 
+const log = Debug('telsa:log')
 const logM = Debug('telsa:message')
 
 /**
@@ -559,14 +560,16 @@ class TLSAlert extends Error {
  */
 class Telsa extends Duplex {
   /**
-   * TODO
+   * TODO (validateDate? & keepalive)
    * @param {object} opts
    * @param {number} opts.port - server port 
    * @param {string} opts.host - server domain name
    * @param {string} opts.ca - root CA certificate in PEM format
-   * @param {string} opts.cert - client certificate
+   * @param {string} opts.cert - client certificate in PEM format
+   * @param {string|function} opts.key - client private key in PEM format
+   * or an asynchronous function that could sign data.
    */
-  constructor (opts) {
+  constructor (opts = {}) {
     super(opts)
 
     /** options */
@@ -588,10 +591,13 @@ class Telsa extends Duplex {
 
     /** client cert in PEM format */
     this.certPem = this.opts.cert
+
     /** client cert in forge format */
     this.cert = pki.certificateFromPem(this.certPem)
+
     /** client cert in forge asn1 format */
     this.certAsn1 = pki.certificateToAsn1(this.cert)
+
     /** client cert in DER format (Buffer) */
     this.certDer = Buffer.from(asn1.toDer(this.certAsn1).data, 'binary')
 
@@ -931,13 +937,6 @@ class Telsa extends Duplex {
   }
 
   /**
-   * set decipher
-   */
-  //  serverChangeCipherSpec (key, macKey) {
-  //    this.decipher = createDecipher(key, macKey)
-  //  }
-
-  /**
    * handle socket data
    * @param {Buffer} data - socket data
    */
@@ -954,12 +953,17 @@ class Telsa extends Duplex {
           this.handleAlert(data)
           break
         case ContentType.CHANGE_CIPHER_SPEC:
+          this.assertLast('client', HandshakeType.FINISHED)
           this.handleChangeCipherSpec(data)
           break
         case ContentType.HANDSHAKE:
           this.handleHandshakeMessage(data)
           break
         case ContentType.APPLICATION_DATA:
+          if (this.state !== 'ESTABLISHED') {
+            throw new TLSError(UNEXPECTED_MESSAGE, 
+              `unexpected application data in ${this.state} state`)
+          }
           this.handleApplicationData(data)
           break
         default:
@@ -995,28 +999,26 @@ class Telsa extends Duplex {
    */
   handleHandshakeMessage (msg) {
     const {
-      HELLO_REQUEST,
-      CLIENT_HELLO,
-      SERVER_HELLO,
-      CERTIFICATE,
-      SERVER_KEY_EXCHANGE,
-      CERTIFICATE_REQUEST,
-      SERVER_HELLO_DONE,
-      CERTIFICATE_VERIFY,
-      CLIENT_KEY_EXCHANGE,
-      FINISHED
+      HELLO_REQUEST, CLIENT_HELLO, SERVER_HELLO, CERTIFICATE,
+      SERVER_KEY_EXCHANGE, CERTIFICATE_REQUEST, SERVER_HELLO_DONE,
+      CERTIFICATE_VERIFY, CLIENT_KEY_EXCHANGE, FINISHED
     } = HandshakeType
 
     const { UNEXPECTED_MESSAGE, DECODE_ERROR } = AlertDescription
-
     const type = msg[0]
     const data = msg.slice(4)
 
-    console.log('  -> ' + handshakeType(type))
+    log('  -> ' + handshakeType(type))
+
+    // ignore
+    if (type === HELLO_REQUEST) return
+
+    if (this.state !== 'HANDSHAKING') {
+      throw new TLSERROR(UNEXPECTED_MESSAGE, 
+        `unexpected handshake message in ${this.state} state`)
+    }
 
     switch (type) {
-      case HELLO_REQUEST: // TODO may reply no_renegotiation
-        return
       case CLIENT_HELLO:
         throw new TLSError(UNEXPECTED_MESSAGE, 'unexpected client hello')
       case SERVER_HELLO:
@@ -1061,8 +1063,31 @@ class Telsa extends Duplex {
         throw new TLSError(UNEXPECTED_MESSAGE, 'unexpected client key exchange')
       case FINISHED:
         this.assertLast('client', FINISHED)
+        if (!this.decipher) {
+          throw new TLSError(UNEXPECTED_MESSAGE, 
+            'unexpected server finished, expects ChangeCipherSpec')
+        }
+
         this.handleServerFinished(data)
         this.saveMessage('server', msg)
+
+        this.state = 'ESTABLISHED'
+
+        // install drain handler
+        this.socket.on('drain', () => {
+          if (this.writing) {
+            const callback = this.writing.callback
+            this.writing = null
+            callback()
+          }
+        })
+
+        // process pending write if any
+        if (this.writing) {
+          const { chunk, encoding, callback } = this.writing
+          this.writing = null
+          this._write(chunk, encoding, callback)
+        }
         break
       default:
         throw new TLSError(DECODE_ERROR, 'bad handshake message type')
@@ -1287,7 +1312,9 @@ class Telsa extends Duplex {
   }
 
   /**
+   * ```
    * struct { } ServerHelloDone;
+   * ```
    */
   handleServerHelloDone (data) {
     const { DECODE_ERROR } = AlertDescription
@@ -1313,54 +1340,40 @@ class Telsa extends Duplex {
       throw new TLSError(AlertDescription.DECRYPT_ERROR,
         'failed to verify server Finished')
     }
-
-    process.nextTick(() => {
-      // set state
-      this.state = 'ESTABLISHED'
-
-      // TODO console.log('telsa entering Established state')
-
-      // enter Established state
-      this.socket.on('drain', () => {
-        if (this.writing) {
-          const callback = this.writing.callback
-          this.writing = null
-          callback()
-        }
-      })
-
-      if (this.writing) {
-        const { chunk, encoding, callback } = this.writing
-        this.writing = null
-        this._write(chunk, encoding, callback)
-      }
-    })
   }
 
-  /**
-   * handle change cipher spec
+  /** 
+   * validates ChangeCipherSpec payload and set decipher 
+   * @param {Buffer} data - payload of ChangeCipherSpec packet
    */
   handleChangeCipherSpec (data) {
-    // TODO expect
-    // TODO validate
-    console.log('  -> ChangeCipherSpec', data)
+    log('  -> ChangeCipherSpec')
+
+    if (data.length !== 1 || data[0] !== 1) {
+      throw new TLSError(AlertDescription.DECODE_ERROR, 
+        'bad change cipher spec')
+    }
+
     this.decipher = createDecipher(this.serverWriteKey, this.serverWriteMacKey)
   }
 
   /**
    * handle application data
+   * @param {Buffer} data
    */
   handleApplicationData (data) {
-    // TODO
-    this.push(data)
+    if (this.push(data)) {
+      this.socket.pause()
+    } 
   }
 
   /**
    * constructs a record layer packet and send
    * @param {number} type - content type
-   * @param {Buffer} data - content
+   * @param {Buffer} data - content, the max size should not exceeds 2^14 bytes
    */
   send (type, data) {
+    if (data.length > Math.pow(2, 14)) throw new Error('over size')
     if (this.cipher) data = this.cipher(type, data)
     const record = concat([from([type]), VER12, prepend16(data)])
     return this.socket.write(record)
@@ -1377,7 +1390,7 @@ class Telsa extends Duplex {
    * @return {boolean} false if buffer full
    */
   sendChangeCipherSpec () {
-    console.log('<- Change Cipher Spec')
+    log('<- Change Cipher Spec')
     return this.send(ContentType.CHANGE_CIPHER_SPEC, from([1]))
   }
 
@@ -1385,7 +1398,7 @@ class Telsa extends Duplex {
    * @return {boolean} false if buffer full
    */
   sendHandshakeMessage (type, data) {
-    console.log('<- ' + handshakeType(type))
+    log('<- ' + handshakeType(type))
     data = concat([from([type]), prepend24(data)])
     this.saveMessage('client', data)
     return this.send(ContentType.HANDSHAKE, data)
@@ -1457,9 +1470,17 @@ class Telsa extends Duplex {
   }
 
   /**
+   * send application data
    * @return {boolean} false if buffer full
    */
-  sendApplicationData (data, callback) {
+  sendApplicationData (data) {
+    const limit = Math.pow(2, 14)
+    // split data
+    while (data.length > limit) {
+      const chunk = data.slice(0, limit)
+      data = data.slice(limit)
+      this.send(ContentType.APPLICATION_DATA, chunk)
+    }
     return this.send(ContentType.APPLICATION_DATA, data)
   }
 
@@ -1501,7 +1522,9 @@ class Telsa extends Duplex {
 
   /** implement Duplex _read */
   _read (size) {
-    if (this.state === 'ESTABLISHED') this.socket.resume()
+    if (this.state === 'ESTABLISHED') {
+      this.socket.resume()
+    }
   }
 
   /**
@@ -1517,7 +1540,7 @@ class Telsa extends Duplex {
    * - (close_notify) redefined from alert
    */
   terminate (reason, err) {
-    console.log('  terminate', this.state, reason, err && err.message)
+    log('  terminate', this.state, reason, err && err.message)
 
     const {
       CLOSE_NOTIFY, USER_CANCELED,
