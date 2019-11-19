@@ -11,7 +11,10 @@ const { alloc, concat, from } = Buffer
 const { asn1, pki } = require('node-forge')
 const Debug = require('debug')
 
+/** log handshake and change cipher spec message name */
 const log = Debug('telsa:log')
+
+/** log server message content */
 const logM = Debug('telsa:message')
 
 /**
@@ -99,7 +102,7 @@ const PRF256 = (secret, label, seed, length) => {
  * A sequence number function returns sequence number starting from 0
  * @typedef SequenceNumberFunction
  * @type {function}
- * @return {buffer}
+ * @returns {buffer}
  */
 
 /**
@@ -509,6 +512,17 @@ class TLSAlert extends Error {
  */
 
 /**
+ * forge-specific x509 data structure
+ * @typedef {object} ForgeCertificate
+ */
+
+/**
+ * forge-specific asn1 data structor
+ * @typedef {object} ForgeAsn1
+ */
+
+
+/**
  * TODO
  *
  * #### States
@@ -560,7 +574,8 @@ class TLSAlert extends Error {
  */
 class Telsa extends Duplex {
   /**
-   * TODO (validateDate? & keepalive)
+   * 
+   *
    * @param {object} opts
    * @param {number} opts.port - server port 
    * @param {string} opts.host - server domain name
@@ -568,6 +583,10 @@ class Telsa extends Duplex {
    * @param {string} opts.cert - client certificate in PEM format
    * @param {string|function} opts.key - client private key in PEM format
    * or an asynchronous function that could sign data.
+   * @param {Date|null} [opts.validityCheckDate] - this parameter is passed
+   * to forge pki.verifyCertificateChain. set `null` will skip validating
+   * certificate's date.
+   * @param {object} [opts.socket] - for mocking socket in test
    */
   constructor (opts = {}) {
     super(opts)
@@ -579,26 +598,38 @@ class Telsa extends Duplex {
       throw new Error('ca not provided')
     }
 
-    /** root ca in forge format */
+    /** root ca certificate in forge format */
     this.ca = pki.certificateFromPem(this.opts.ca)
 
-    /** forge ca store */
+    /** ca store in forge format*/
     this.caStore = pki.createCaStore([this.ca])
 
     if (!this.opts.cert) {
       throw new Error('client certificate not provided')
     }
 
-    /** client cert in PEM format */
+    /** 
+     * client cert in PEM format 
+     * @type {string}
+     */
     this.certPem = this.opts.cert
 
-    /** client cert in forge format */
+    /** 
+     * client cert in forge format 
+     * @type {ForgeCertificate}
+     */
     this.cert = pki.certificateFromPem(this.certPem)
 
-    /** client cert in forge asn1 format */
+    /** 
+     * client cert in forge asn1 format 
+     * @type {ForgeAsn1}
+     */
     this.certAsn1 = pki.certificateToAsn1(this.cert)
 
-    /** client cert in DER format (Buffer) */
+    /** 
+     * client cert in DER format
+     * @type {Buffer}
+     */
     this.certDer = Buffer.from(asn1.toDer(this.certAsn1).data, 'binary')
 
     /**
@@ -608,78 +639,113 @@ class Telsa extends Duplex {
      * `CONNECTING` or `HANDSHAKING` state
      * - `{ callback }` if the operation is waiting for draining in
      * `ESTABLISHED` state
+     *
+     * @type {object|null}
      */
     this.writing = null
 
-    /**
-     * incomming data buffer, may contain fragmented records.
+    /** 
+     * incomming data buffer, may contain fragmented records.  
+     * @type {Buffer}
      */
     this.incomming = Buffer.alloc(0)
 
     /**
-     * current fragment, contains 0, 1 or more records of the same content type
+     * current fragment, contains 0, 1 or more records of 
+     * the same content type
      * @type {Fragment|null}
      */
     this.fragment = null
 
-    /** client random */
+    /** 
+     * client random (generated)
+     * @type {Buffer}
+     */
     this.clientRandom = randomFillSync(alloc(32))
 
-    /** session id, received in ServerHello */
-    this.sessionId = 0
+    /** 
+     * session id, received in ServerHello (not used anywhere)
+     * @type {Buffer} 
+     */
+    this.sessionId = undefined
 
-    /** server random, received in ServerHello */
+    /** 
+     * server random, received in ServerHello
+     * @type {Buffer}
+     */
     this.serverRandom = undefined
 
     /** 
-     * server certificates received in server Certificate, stored 
-     * in forge format and original reversed order, with highest
-     * authorities at last.
+     * server certificates received in server Certificate. Items 
+     * are stored in forge format in the order that the cert with 
+     * highest authority comes at last.
+     * @type {ForgeCertificate[]}
      */
     this.serverCertificates = []
 
-    /** server public key extracted from server certificate, in  */
-    this.serverPublicKey = undefined
-
-    /** pre-master secret */
+    /** 
+     * pre-master secret 
+     * @type {Buffer}
+     */
     this.preMasterSecret = concat([VER12, randomFillSync(alloc(46))])
 
-    /** master secret */
+    /** 
+     * master secret 
+     * @type {Buffer}
+     */
     this.masterSecret = undefined
 
-    /** client write mac key */
+    /** 
+     * client write mac key 
+     * @type {Buffer}
+     */
     this.clientWriteMacKey = undefined
 
-    /** server write mac key */
+    /** 
+     * server write mac key 
+     * @type {Buffer}
+     */
     this.serverWriteMacKey = undefined
 
-    /** client key */
+    /** 
+     * client write key 
+     * @type {Buffer}
+     */
     this.clientWriteKey = undefined
 
-    /** server key */
+    /** 
+     * server key 
+     * @type {Buffer}
+     */
     this.serverWriteKey = undefined
 
-    /** handshake messages */
+    /** 
+     * saved handshake messages for protocol
+     * @type {Buffer[]}
+     */
     this.msgs = []
 
-    /** @type {CipherFunction} */
+    /** 
+     * cipher function
+     * @type {CipherFunction} 
+     */
     this.cipher = null
 
-    /** @type {DecipherFunction} */
+    /** 
+     * decipher function
+     * @type {DecipherFunction} 
+     */
     this.decipher = null
 
     /**
-     * tcp connection
+     * underlying connection
      * @type {net.Socket}
      */
     this.socket = this.opts.socket || net.createConnection(opts)
+
     this.socket.on('connect', () => {
       this.state = 'HANDSHAKING'
 
-      /**
-       * handshake context
-       * @type {HandshakeContext}
-       */
       this.socket.on('close', () => this.terminate('socket'))
       this.socket.on('data', data => {
         try {
@@ -694,12 +760,18 @@ class Telsa extends Duplex {
     })
 
     this.socket.on('error', err => this.terminate('socket', err))
+
+    /**
+     * internal state
+     * @type {string}
+     */
     this.state = 'CONNECTING'
   }
 
   /**
-   * handle errors from data handler, asynchronous operations, but not
-   * socket error
+   * handle errors from data handler, asynchronous operations, 
+   * but not socket error.
+   * @param {Error} e - TLSError, TLSAlert, and other Error.
    */
   handleError (e) {
     if (e instanceof TLSAlert) {
@@ -710,7 +782,7 @@ class Telsa extends Duplex {
   }
 
   /**
-   * @return max fragment length
+   * @returns max fragment length defined in record protocol
    */
   maxFragmentLength () {
     if (this.decipher) {
@@ -722,7 +794,7 @@ class Telsa extends Duplex {
 
   /**
    * read a record out of incomming data buffer
-   * @returns {Fragment} the record type and payload
+   * @returns {Fragment} the record type and content (buffer)
    */
   readFragment () {
     const {
@@ -802,7 +874,7 @@ class Telsa extends Duplex {
   }
 
   /**
-   * read a message from current fragment
+   * reads a message from current fragment
    * @returns {Message}
    */
   readMessageFromFragment () {
@@ -829,8 +901,10 @@ class Telsa extends Duplex {
   }
 
   /**
-   * read a message
-   * @returns {Message}
+   * reads a message from both current fragment and 
+   * incomming data buffer. If no message available, 
+   * it returns `undefined`.
+   * @returns {Message|undefined}
    */
   readMessage () {
     const { DECODE_ERROR } = AlertDescription
@@ -853,7 +927,9 @@ class Telsa extends Duplex {
   }
 
   /**
-   * save handshake message
+   * save a handshake message to message buffer
+   * @param {string} from - either `server` or `client`
+   * @parma {Buffer} msg - handshake message
    */
   saveMessage (from, msg) {
     if (from !== 'server' && from !== 'client') {
@@ -864,7 +940,9 @@ class Telsa extends Duplex {
   }
 
   /**
-   * assert last handshake message from and type
+   * assert last handshake message in buffer
+   * @param {string} from - expected message sender
+   * @param {number} type - expected message type
    */
   assertLast (from, type) {
     const { UNEXPECTED_MESSAGE } = AlertDescription
@@ -915,20 +993,26 @@ class Telsa extends Duplex {
     this.deriveKeys()
   }
 
-  /** generates client verify data in client Finished message */
+  /** 
+   * generates client verify data in client Finished message 
+   * @returns {Buffer} client verify data
+   */
   clientVerifyData () {
     return PRF256(this.masterSecret, 'client finished',
       SHA256(concat(this.msgs)), 12)
   }
 
-  /** generates server verify data in server Finsihed message */
+  /** 
+   * generates server verify data in server Finsihed message 
+   * @returns {Buffer} server verify data
+   */
   serverVerifyData () {
     return PRF256(this.masterSecret, 'server finished',
       SHA256(concat(this.msgs)), 12)
   }
 
   /**
-   * send change cipher spec message and set cipher
+   * send change cipher spec message and set cipher function
    */
   changeCipherSpec () {
     this.sendChangeCipherSpec()
@@ -937,8 +1021,11 @@ class Telsa extends Duplex {
   }
 
   /**
-   * handle socket data
+   * handles socket data, decodes record content
+   * and dispatches data to corresponding handlers 
+   *
    * @param {Buffer} data - socket data
+   * @throws {TLSError} DECODE_ERROR
    */
   handleSocketData (data) {
     const { DECODE_ERROR } = AlertDescription
@@ -973,8 +1060,10 @@ class Telsa extends Duplex {
   }
 
   /**
-   * handle alert message, all warnings are bypassed except `close_notify`
+   * handles server alert, throws TLSAlert for all fatal alert
+   * and close_notify, other warnings are ignored
    * @param {Buffer} data
+   * @throws {TLSAlert|TLSError}
    */
   handleAlert (data) {
     const { DECODE_ERROR, CLOSE_NOTIFY } = AlertDescription
@@ -989,12 +1078,17 @@ class Telsa extends Duplex {
     if (level === AlertLevel.FATAL || desc === CLOSE_NOTIFY) {
       throw new TLSAlert(desc, level)
     } else {
-      // TODO console.log(`tls server alert: ${alertDescription(desc)}`)
+      console.log(`tls server warning: ${alertDescription(desc)}`)
     }
   }
 
   /**
-   * handle handshake message
+   * handles handshake message according to protocol.
+   * - enforcing state and sequence, throw UNEXPECTED_MESSAGE if violated
+   * - save message to buffer
+   * - sign ClientVerify asynchonously
+   * - change to ESTABLISHED state if handshake succeeded
+   * - HELLO_REQUEST is ignored
    * @param {Buffer} msg - full message data, including type, length, and body
    */
   handleHandshakeMessage (msg) {
@@ -1095,16 +1189,11 @@ class Telsa extends Duplex {
   }
 
   /**
+   * parses ServerHello message
+   * - saves sessionId and server random
+   * - verifies protocol version, cipher suite, compression method 
+   * and extensions
    * ```
-   * enum {
-   *   signature_algorithms(13), (65535)
-   * } ExtensionType;
-   *
-   * struct {
-   *   ExtensionType extension_type;
-   *   opaque extension_data<0..2^16-1>;
-   * } Extension;
-   *
    * struct {
    *   ProtocolVersion server_version;
    *   Random random;
@@ -1119,10 +1208,14 @@ class Telsa extends Duplex {
    *   };
    * } ServerHello;
    * ```
+   * @param {Buffer} data - ServerHello message body
+   * @throws {TLSError} DECODE_ERROR or ILLEGAL_PARAMETER
    */
   handleServerHello (data) {
     const shift = size => K(data.slice(0, size))(data = data.slice(size))
     const { ILLEGAL_PARAMETER } = AlertDescription
+
+    // TODO check available data size before shift
 
     const serverVersion = shift(2)
     if (!serverVersion.equals(VER12)) {
@@ -1151,7 +1244,7 @@ class Telsa extends Duplex {
        * An extension type MUST NOT appear in the ServerHello unless the same
        * extension type appeared in the corresponding ClientHello.
        */
-      throw new TLSError(ILLEGAL_PARAMETER, 'server hello has extensions')
+      throw new TLSError(ILLEGAL_PARAMETER, 'ServerHello has extensions')
     }
 
     logM('ServerHello', {
@@ -1165,14 +1258,15 @@ class Telsa extends Duplex {
   }
 
   /**
-   * extracts and verifies server certificates. If succeeded,
-   * extracts server public key for futher usage.
+   * verifies server certificates using forge.pki
    *
    * ```
    * struct {
    *   ASN.1Cert certificate_list<0..2^24-1>;
    * } Certificate;
    * ```
+   * @param {Buffer} data - Certificate message body
+   * @throws {TLSError} 
    */
   handleCertificate (data) {
     const shift = size => K(data.slice(0, size))(data = data.slice(size))
@@ -1252,8 +1346,11 @@ class Telsa extends Duplex {
     if (highest !== -1) {
       const chain = certs.slice(0, highest + 1)
 
-      // skip check date for client may have bad time
-      const opts = { validityCheckDate: null }
+      const opts = {}
+      if (this.opts.validityCheckDate instanceof Date ||
+        this.opts.validityCheckDate === null) {
+        opts.validityCheckDate = this.opts.validityCheckDate
+      }
       try {
         if (pki.verifyCertificateChain(this.caStore, chain, opts)) return
       } catch (e) {
@@ -1266,6 +1363,7 @@ class Telsa extends Duplex {
   }
 
   /**
+   * 
    * ```
    * struct {
    *   ClientCertificateType certificate_types<1..2^8-1>;
@@ -1274,6 +1372,8 @@ class Telsa extends Duplex {
    *   DistinguishedName certificate_authorities<0..2^16-1>;
    * } CertificateRequest;
    * ```
+   * @param {Buffer} data - CertificateRequest message body  
+   * @throws {TLSError} DECODE_ERROR
    */
   handleCertificateRequest (data) {
     const shift = size => K(data.slice(0, size))(data = data.slice(size))
@@ -1312,20 +1412,24 @@ class Telsa extends Duplex {
   }
 
   /**
+   * handles ServerHelloDone message
+   *
    * ```
    * struct { } ServerHelloDone;
    * ```
+   * @param {Buffer} data - ServerHelloDone message body (empty)
+   * @throws {TLSError} ILLEGAL_PARAMETER
    */
   handleServerHelloDone (data) {
     const { DECODE_ERROR } = AlertDescription
     if (data.length) {
-      throw new TLSError(DECODE_ERROR, 'invalid ServerHelloDone')
+      throw new TLSError(ILLEGAL_PARAMETER, 
+        'illegal ServerHelloDone message body')
     }
   }
 
   /**
-   * checks `verify_data` in server Finished message, transits to
-   * Established state or throw error
+   * handles server Finished message. compares server `verify_data`
    *
    * ```
    * struct {
@@ -1333,6 +1437,7 @@ class Telsa extends Duplex {
    * } Finished;
    * ```
    * @param {Buffer} data
+   * @throws {TLSERROR} DECRYPT_ERROR if verification fails.
    */
   handleServerFinished (data) {
     const verifyData = this.serverVerifyData()
@@ -1343,8 +1448,8 @@ class Telsa extends Duplex {
   }
 
   /** 
-   * validates ChangeCipherSpec payload and set decipher 
-   * @param {Buffer} data - payload of ChangeCipherSpec packet
+   * validates ChangeCipherSpec message and set decipher 
+   * @param {Buffer} data - ChangeCipherSpec message body
    */
   handleChangeCipherSpec (data) {
     log('  -> ChangeCipherSpec')
@@ -1358,8 +1463,9 @@ class Telsa extends Duplex {
   }
 
   /**
-   * handle application data
-   * @param {Buffer} data
+   * handles application data, pauses underlying socket if 
+   * upper layer (Duplex) buffer full.
+   * @param {Buffer} data - received application data
    */
   handleApplicationData (data) {
     if (this.push(data)) {
@@ -1368,9 +1474,10 @@ class Telsa extends Duplex {
   }
 
   /**
-   * constructs a record layer packet and send
+   * constructs a record layer packet and send via socket
    * @param {number} type - content type
    * @param {Buffer} data - content, the max size should not exceeds 2^14 bytes
+   * @returns {boolean} false if socket buffer full
    */
   send (type, data) {
     if (data.length > Math.pow(2, 14)) throw new Error('over size')
@@ -1380,14 +1487,18 @@ class Telsa extends Duplex {
   }
 
   /**
-   * @return {boolean} false if buffer full
+   * send alert to server
+   * @param {number} level - alert level
+   * @parma {number} description - alert description
+   * @returns {boolean} false if buffer full
    */
   sendAlert (level, description) {
     return this.send(ContentType.ALERT, from([level, description]))
   }
 
   /**
-   * @return {boolean} false if buffer full
+   * send ChangeCipherSpec to server
+   * @returns {boolean} false if buffer full
    */
   sendChangeCipherSpec () {
     log('<- Change Cipher Spec')
@@ -1395,7 +1506,10 @@ class Telsa extends Duplex {
   }
 
   /**
-   * @return {boolean} false if buffer full
+   * send handshake message, the message is also pushed to message buffer
+   * @param {number} type - handshake message type 
+   * @param {Buffer} data - handshake message body
+   * @returns {boolean} false if buffer full
    */
   sendHandshakeMessage (type, data) {
     log('<- ' + handshakeType(type))
@@ -1418,9 +1532,7 @@ class Telsa extends Duplex {
   }
 
   /**
-   * send client certificate if ServerHelloDone and
-   * server public key available (which also means server certificates
-   * verified)
+   * send client Certificate handshake message
    */
   sendCertificate () {
     this.sendHandshakeMessage(HandshakeType.CERTIFICATE,
@@ -1428,8 +1540,7 @@ class Telsa extends Duplex {
   }
 
   /**
-   * send ClientKeyExchange message, preMasterSecret is encrypted
-   * using server's public key
+   * send ClientKeyExchange handshake message
    */
   sendClientKeyExchange () {
     this.sendHandshakeMessage(HandshakeType.CLIENT_KEY_EXCHANGE,
@@ -1440,9 +1551,13 @@ class Telsa extends Duplex {
   }
 
   /**
-   * sign all handshake messages sent and received so far
+   * signs handshake message bundle asynchronously
+   * @param {function} callback - `(err, sig) => {}`
    */
   sign (callback) {
+
+    // TODO try catch callback and nextTick
+
     const key = this.opts.key
     const tbs = concat(this.msgs)
     if (typeof key === 'function') {
@@ -1454,7 +1569,8 @@ class Telsa extends Duplex {
   }
 
   /**
-   * send CertificateVerify
+   * send CertificateVerify handshake message
+   * @param {Buffer} sig - handshake message bundle signature
    */
   sendCertificateVerify (sig) {
     this.sendHandshakeMessage(HandshakeType.CERTIFICATE_VERIFY,
@@ -1470,8 +1586,9 @@ class Telsa extends Duplex {
   }
 
   /**
-   * send application data
-   * @return {boolean} false if buffer full
+   * send application data. This function split data into chunks
+   * if tls record size limit is exceeded.
+   * @returns {boolean} false if buffer full
    */
   sendApplicationData (data) {
     const limit = Math.pow(2, 14)
@@ -1485,7 +1602,7 @@ class Telsa extends Duplex {
   }
 
   /**
-   * implements `Duplex` `_write`
+   * implements `Duplex` interface method
    */
   _write (chunk, encoding, callback) {
     switch (this.state) {
@@ -1502,25 +1619,28 @@ class Telsa extends Duplex {
         }
         break
       case 'TERMINATED':
-        callback(new Error('This socket has been terminated'))
+        const err = new Error('This socket has been terminated')
+        err.code = 'EPIPE'
+        callback(err)
         break
       default:
         break
     }
   }
 
-  /** implement Duplex _final */
+  /** implement `Duplex` interface method */
   _final (callback) {
     callback()
     this.terminate('final')
   }
 
+  /** implements `Duplex` interface method */
   _destroy (err, callback) {
     callback(err)
     this.terminate('destroy')
   }
 
-  /** implement Duplex _read */
+  /** implements `Duplex` interface method */
   _read (size) {
     if (this.state === 'ESTABLISHED') {
       this.socket.resume()
@@ -1538,6 +1658,9 @@ class Telsa extends Duplex {
    * - error, TLSError | Error
    * - alert, TLSAlert
    * - (close_notify) redefined from alert
+   * 
+   * @param {string} reason
+   * @param {Error} [err]
    */
   terminate (reason, err) {
     log('  terminate', this.state, reason, err && err.message)
