@@ -35,7 +35,11 @@ const {
 } = crypto
 
 const { alloc, concat, from } = Buffer
+
 const { asn1, pki } = require('node-forge')
+const Debug = require('debug')
+
+const logM = Debug('telsa:message')
 
 /**
  * K combinator is a higher-order function which accepts two
@@ -100,8 +104,7 @@ const HMAC1 = (key, data) => createHmac('sha1', key).update(data).digest()
 const HMAC256 = (key, data) => createHmac('sha256', key).update(data).digest()
 
 /**
- * pseudo random function for key generation and expansion
- * see rfc5246
+ * pseudo random function for key generation and expansion, see rfc5246.
  *
  * @function
  * @param {buffer} secret
@@ -149,7 +152,7 @@ const createSequenceNumber = () => {
 }
 
 /**
- * A cipher function encrypts a tls record.
+ * A cipher function encrypts a tls record content.
  * @typedef CipherFunction
  * @type {function}
  * @param { type - tls record type
@@ -338,7 +341,10 @@ const alertLevel = level => {
   }
 }
 
-/** @enum {number} alert description */
+/** 
+ * TODO describe usage
+ * @enum {number} alert description 
+ */
 const AlertDescription = {
   CLOSE_NOTIFY: 0,
   UNEXPECTED_MESSAGE: 10,
@@ -457,10 +463,10 @@ const alertDescription = desc => {
 }
 
 /**
- * TLSError represents an error in tls protocol handling,
+ * TLSError represents an error in handling tls protocol,
  * such as decoding or decryption error, malformatted message
  * or illegal value. It is not used for error emitted from
- * dependent components, such as socket error or file system error.
+ * dependent components, such as socket or file system api.
  *
  * TLSError has no error code defined.
  */
@@ -530,6 +536,8 @@ class TLSAlert extends Error {
  */
 
 /**
+ * TODO
+ *
  * #### States
  *
  * Telsa has four internal states:
@@ -579,7 +587,11 @@ class TLSAlert extends Error {
  */
 class Telsa extends Duplex {
   /**
+   * TODO
    * @param {object} opts
+   * @param {number} opts.port - server port 
+   * @param {string} opts.host - server domain name
+   * @parma {string} opts.ca - root CA certificate in PEM format
    */
   constructor (opts) {
     super(opts)
@@ -598,42 +610,60 @@ class Telsa extends Duplex {
     this.caStore = pki.createCaStore([this.ca])
 
     /**
-     * blocked or draining `_write` operation
-     * - `null` if no blocked `_write`
-     * - `{ chunk, encoding, callback }` if a `_write` is blocked
-     * - `callback` if the operation is waiting for draining
-     * @type {object|function}
+     * pending or draining `_write` operation
+     * - `null` if no pending or drain `_write`
+     * - `{ chunk, encoding, callback }` if a `_write` is pending in
+     * `CONNECTING` or `HANDSHAKING` state
+     * - `{ callback }` if the operation is waiting for draining in
+     * `ESTABLISHED` state
      */
     this.writing = null
 
     /**
      * incomming data buffer, may contain fragmented records.
-     * @type {Buffer}
      */
     this.incomming = Buffer.alloc(0)
 
     /**
-     * current fragment, contains 0, 1 or more records of the same type.
+     * current fragment, contains 0, 1 or more records of the same content type
      * @type {Fragment|null}
      */
     this.fragment = null
 
-    /** session id */
-    this.sessionId = 0
     /** client random */
     this.clientRandom = randomFillSync(alloc(32))
-    /** server random */
+
+    /** session id, received in ServerHello */
+    this.sessionId = 0
+
+    /** server random, received in ServerHello */
     this.serverRandom = undefined
+
+    /** 
+     * server certificates received in server Certificate, stored 
+     * in forge format and original reversed order, with highest
+     * authorities at last.
+     */
+    this.serverCertificates = []
+
+    /** server public key extracted from server certificate, in  */
+    this.serverPublicKey = undefined
+
     /** pre-master secret */
     this.preMasterSecret = concat([VER12, randomFillSync(alloc(46))])
+
     /** master secret */
     this.masterSecret = undefined
+
     /** client write mac key */
     this.clientWriteMacKey = undefined
+
     /** server write mac key */
     this.serverWriteMacKey = undefined
+
     /** client key */
     this.clientWriteKey = undefined
+
     /** server key */
     this.serverWriteKey = undefined
 
@@ -643,9 +673,7 @@ class Telsa extends Duplex {
     /** @type {CipherFunction} */
     this.cipher = null
 
-    /**
-     * @type {DecipherFunction}
-     */
+    /** @type {DecipherFunction} */
     this.decipher = null
 
     /**
@@ -1057,6 +1085,15 @@ class Telsa extends Duplex {
 
   /**
    * ```
+   * enum {
+   *   signature_algorithms(13), (65535)
+   * } ExtensionType;
+   *
+   * struct {
+   *   ExtensionType extension_type;
+   *   opaque extension_data&lt;0..2^16-1>;
+   * } Extension;
+   *
    * struct {
    *   ProtocolVersion server_version;
    *   Random random;
@@ -1076,38 +1113,44 @@ class Telsa extends Duplex {
     const shift = size => K(data.slice(0, size))(data = data.slice(size))
     const { ILLEGAL_PARAMETER } = AlertDescription
 
-    const ProtocolVersion = shift(2)
-    if (!ProtocolVersion.equals(VER12)) {
+    const serverVersion = shift(2)
+    if (!serverVersion.equals(VER12)) {
       throw new TLSError(ILLEGAL_PARAMETER, 'unsupported tls version')
     }
 
-    const Random = shift(32)
-    this.setServerRandom(Random)
+    const random = shift(32)
+    this.setServerRandom(random)
 
-    const SessionId = shift(shift(1)[0])
-    this.sessionId = SessionId
+    const sessionId = shift(shift(1)[0])
+    this.sessionId = sessionId
 
-    const CipherSuite = shift(2)
-    if (!CipherSuite.equals(AES_128_CBC_SHA)) {
+    const cipherSuite = shift(2)
+    if (!cipherSuite.equals(AES_128_CBC_SHA)) {
       throw new TLSError(ILLEGAL_PARAMETER, 'unsupported cipher suite')
     }
 
-    const CompressionMethod = shift(1)[0]
-    if (CompressionMethod !== 0) {
+    const compressionMethod = shift(1)[0]
+    if (compressionMethod !== 0) {
       throw new TLSError(ILLEGAL_PARAMETER, 'compression not supported')
     }
 
-    /**
-    TODO new class ?
-      console.log('ServerHello', {
-        ProtocolVersion: ProtocolVersion.toString('hex'),
-        Random,
-        SessionId,
-        CipherSuite: CipherSuite.toString('hex'),
-        CompressionMethod,
-        data
-      })
-    */
+    if (data.length) {
+      /** 
+       * rfc 5246
+       * An extension type MUST NOT appear in the ServerHello unless the same
+       * extension type appeared in the corresponding ClientHello.
+       */
+      throw new TLSError(ILLEGAL_PARAMETER, 'server hello has extensions')
+    }
+
+    logM('ServerHello', {
+      serverVersion: serverVersion.toString('hex'),
+      random: random.toString('hex'),
+      sessionId: sessionId.toString('hex'),
+      cipherSuite: cipherSuite.toString('hex'),
+      compressionMethod,
+      extension: null
+    })
   }
 
   /**
@@ -1123,16 +1166,16 @@ class Telsa extends Duplex {
   handleCertificate (data) {
     const shift = size => K(data.slice(0, size))(data = data.slice(size))
     const {
-      DECODE_ERROR, BAD_CERTIFICATE,
-      UNSUPPORTED_CERTIFICATE, ILLEGAL_PARAMETER, CERTIFICATE_UNKNOWN,
-      UNKNOWN_CA
+      DECODE_ERROR, BAD_CERTIFICATE, UNSUPPORTED_CERTIFICATE, 
+      ILLEGAL_PARAMETER, CERTIFICATE_UNKNOWN, UNKNOWN_CA
     } = AlertDescription
 
     if (data.length &lt; 3 || readUInt24(shift(3)) !== data.length) {
       throw new TLSError(DECODE_ERROR, 'invalid message length')
     }
 
-    // certificates are in DER format and reversed order
+    // certificates are in DER format and reversed order.
+    // forge.pki use this order.
     // parse data to be an array of forge cert objects
     const certs = []
     while (data.length) {
@@ -1162,28 +1205,49 @@ class Telsa extends Duplex {
       certs.push(cert)
     }
 
+    // server no cert
     if (!certs.length) {
       throw new TLSError(ILLEGAL_PARAMETER, 'no certificate')
     }
 
+    this.serverCertificates = certs
+
+    logM('Server Certificate', this.serverCertificates.map(cert => {
+      const subject = [...cert.subject.attributes]
+        .sort((a, b) => a.shortName > b.shortName)
+        .reduce((o, a) => Object.assign(o, { [a.shortName]: a.value }), {})
+      const issuer = [...cert.issuer.attributes]
+        .sort((a, b) => a.shortName > b.shortName)
+        .reduce((o, a) => Object.assign(o, { [a.shortName]: a.value }), {})
+      const validity = cert.validity
+      return { subject, issuer, validity }
+    }))
+
+    // verify domain name (CN)
+    const attr = certs[0].subject.getField('CN')
+    if (!attr || typeof attr.value !== 'string' || !attr.value.length) {
+      throw new TLSError(CERTIFICATE_UNKNOWN, 'bad subject common name')
+    }
+
+    const commonName = 
+      attr.value.startsWith('*') ? attr.value.slice(1) : attr.value
+
+    if (!this.opts.host.endsWith(commonName)) {
+      throw new TLSError(CERTIFICATE_UNKNOWN, 
+        'certificate subject common name does NOT match host domain name')
+    }
+      
     const highest = certs.findIndex(cert => cert.isIssuer(this.ca))
     if (highest !== -1) {
       const chain = certs.slice(0, highest + 1)
 
       // skip check date for client may have bad time
       const opts = { validityCheckDate: null }
-      let verified = false
       try {
-        verified = pki.verifyCertificateChain(this.caStore, chain, opts)
+        if (pki.verifyCertificateChain(this.caStore, chain, opts)) return
       } catch (e) {
         console.log('pki.verifyCertificateChain() failed', e)
-        throw new TLSError(CERTIFICATE_UNKNOWN,
-          'failed to verify certificate chain')
-      }
-
-      if (verified) {
-        this.serverPublicKey = pki.publicKeyToPem(chain[0].publicKey)
-        return
+        throw new TLSError(CERTIFICATE_UNKNOWN, 'failed to verify cert chain')
       }
     }
 
@@ -1208,33 +1272,32 @@ class Telsa extends Duplex {
       throw new TLSError(DECODE_ERROR, 'invalid length')
     }
 
-    this.certificateTypes = Array.from(shift(shift(1)[0]))
+    const certificateTypes = Array.from(shift(shift(1)[0]))
 
     if (data.length &lt; 2 || data.readUInt16BE() % 2 ||
       data.readUInt16BE() + 2 > data.length) {
       throw new TLSError(DECODE_ERROR, 'invalid length')
     }
 
-    this.signatureAlgorithms = Array
+    const supportedSignatureAlgorithms = Array
       .from(shift(shift(2).readUInt16BE()))
       .reduce((acc, c, i, arr) =>
         (i % 2) ? [...acc, arr[i - 1] * 256 + c] : acc, [])
 
     // ignore distinguished names (DER), observed 00 00
     // no idea what it looks like if non-null
+    let certificateAuthorities
     try {
-      asn1.fromDer(data.toString('binary'))
+      certificateAuthorities = asn1.fromDer(data.toString('binary'))
     } catch (e) {
-      console.log(e)
+      throw new TLSError(DECODE_ERROR, 'invalid certificate_authorities')
     }
 
-    /**
-    console.log('CertificateRequest', {
-      ClientCertificateType: this.certificateTypes,
-      SignatureAndHashAlgorithm: this.signatureAlgorithms,
-      data
+    logM('CertificateRequest', {
+      certificateTypes,
+      supportedSignatureAlgorithms,
+      certificateAuthorities
     })
-    */
   }
 
   /**
@@ -1295,7 +1358,6 @@ class Telsa extends Duplex {
     // TODO expect
     // TODO validate
     console.log('  -> ChangeCipherSpec', data)
-    // this.serverChangeCipherSpec(this.serverWriteKey, this.serverWriteMacKey)
     this.decipher = createDecipher(this.serverWriteKey, this.serverWriteMacKey)
   }
 
@@ -1374,7 +1436,7 @@ class Telsa extends Duplex {
   sendClientKeyExchange () {
     this.sendHandshakeMessage(HandshakeType.CLIENT_KEY_EXCHANGE,
       prepend16(publicEncrypt({
-        key: this.serverPublicKey,
+        key: pki.publicKeyToPem(this.serverCertificates[0].publicKey),
         padding: RSA_PKCS1_PADDING
       }, this.preMasterSecret)))
   }
@@ -1581,7 +1643,7 @@ module.exports = Telsa
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Tue Nov 19 2019 12:22:53 GMT+0800 (China Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Tue Nov 19 2019 15:36:17 GMT+0800 (China Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -16,8 +16,8 @@ if (true) {
   const telsa = new Telsa({ 
     port: 8883,
     host: 'a1dn6p515gxf18.ats.iot.cn-north-1.amazonaws.com.cn',
-    clientCertificates: [cert],
-    clientPrivateKey: key,
+    key,
+    cert, 
     ca
   })
 

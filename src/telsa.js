@@ -314,7 +314,7 @@ const alertLevel = level => {
 }
 
 /** 
- * TODO document description usage
+ * TODO describe usage
  * @enum {number} alert description 
  */
 const AlertDescription = {
@@ -561,6 +561,10 @@ class Telsa extends Duplex {
   /**
    * TODO
    * @param {object} opts
+   * @param {number} opts.port - server port 
+   * @param {string} opts.host - server domain name
+   * @param {string} opts.ca - root CA certificate in PEM format
+   * @param {string} opts.cert - client certificate
    */
   constructor (opts) {
     super(opts)
@@ -577,6 +581,19 @@ class Telsa extends Duplex {
 
     /** forge ca store */
     this.caStore = pki.createCaStore([this.ca])
+
+    if (!this.opts.cert) {
+      throw new Error('client certificate not provided')
+    }
+
+    /** client cert in PEM format */
+    this.certPem = this.opts.cert
+    /** client cert in forge format */
+    this.cert = pki.certificateFromPem(this.certPem)
+    /** client cert in forge asn1 format */
+    this.certAsn1 = pki.certificateToAsn1(this.cert)
+    /** client cert in DER format (Buffer) */
+    this.certDer = Buffer.from(asn1.toDer(this.certAsn1).data, 'binary')
 
     /**
      * pending or draining `_write` operation
@@ -1023,7 +1040,7 @@ class Telsa extends Duplex {
         this.assertLast('server', CERTIFICATE_REQUEST)
         this.handleServerHelloDone(data)
         this.saveMessage('server', msg)
-        this.sendClientCertificate()
+        this.sendCertificate()
         this.sendClientKeyExchange()
         this.sign((err, sig) => {
           try {
@@ -1392,10 +1409,9 @@ class Telsa extends Duplex {
    * server public key available (which also means server certificates
    * verified)
    */
-  sendClientCertificate () {
+  sendCertificate () {
     this.sendHandshakeMessage(HandshakeType.CERTIFICATE,
-      prepend24(concat([
-        ...this.opts.clientCertificates.map(c => prepend24(c))])))
+      prepend24(concat([prepend24(this.certDer)])))
   }
 
   /**
@@ -1414,7 +1430,7 @@ class Telsa extends Duplex {
    * sign all handshake messages sent and received so far
    */
   sign (callback) {
-    const key = this.opts.clientPrivateKey
+    const key = this.opts.key
     const tbs = concat(this.msgs)
     if (typeof key === 'function') {
       key(tbs, callback)
