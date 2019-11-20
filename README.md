@@ -8,6 +8,7 @@ Telsa has many limitations:
 3. it has no support for compression
 4. it supports only RSA in public key signature for server certficate, due to limitation of forge
 5. the server MUST issue a CertificateRequest during handshake, otherwise, Telsa will throw an error
+6. the server certificate must have it's domain name in CN field of it Subject. Using `SubjectAltName` extension will fail the verification.
 
 In constructing a Telsa connection, a `key` must be provided as an option property. It may be a PEM format private key, or an asynchronous function that cound sign a chunk of data. Telsa will use the signature in CertifiateVerify hanshake message.
 
@@ -17,6 +18,15 @@ Telsa extends node `stream.Duplex`. All node stream events are available. `Destr
 
 Telsa is not a drop-in replacement for node TLS. It is simpler. A `connect` event is emitted after a TLS handshaking. There is no `secureConnect` event. Data should be written or piped into Telsa before a `connect` event.
 
+# Dependencies
+
+Telsa has two dependencies. `forge` for processing server certificates, and `debug` for debugging print.
+
+`forge` is also a pure JavaScript implementation with its own TLS/SSL implementation. `forge` supports only RSA public key signature, so a certificate signed with `ECDHA` could not be verified.
+
+It is possible to use openssl command to verify the certificate chain, which has a better support for certificates signed by other algorithms other than RSA.
+
+Telsa has no plan for its own X.509 and Asn.1 support so far.
 
 
 # Example
@@ -63,7 +73,7 @@ end
 close
 ```
 
-
+# Closure
 
 Noticing that the last line in code has a `setTimeout`. Telsa ends the connection **SYNCHRONOUSLY**. Without this delay, your should not see the received data, which is a MQTT_PINGRESP. If this line is commented out, after a few seconds, aws cloud will end the connection.
 
@@ -98,8 +108,8 @@ Constructs a Telsa object.
 
 A signing function accepts a chunk of data and returns the signature in callback function.
 
-* data `<Buffer>` data to be signed
-* callback `<function>`, in the form of `(err, sig) => {}`, where:
-  * err `<Error>` error
-  * sig `<Buffer>` signature
+* `data` `<Buffer>` data to be signed
+* `callback` `<function>`, in the form of `(err, sig) => {}`, where:
+  * `err` `<Error>` error
+  * `sig` `<Buffer>` signature
 
