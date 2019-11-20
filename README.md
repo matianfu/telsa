@@ -4,7 +4,7 @@ Theoretically this should be done via openssl engine. In practice, however, ther
 
 Telsa has many limitations:
 1. it supports only TLS v1.2
-2. it supports only TLS_RSA_WITH_AES_128_CBC_SHA cipher suite, which is mandatory in TLS v1.2
+2. it supports only `TLS_RSA_WITH_AES_128_CBC_SHA` cipher suite, which is mandatory in TLS v1.2
 3. it has no support for compression
 4. it supports only RSA in public key signature for server certficate, due to limitation of forge
 5. the server MUST issue a CertificateRequest during handshake, otherwise, Telsa will throw an error
@@ -81,25 +81,25 @@ Unlike a tcp connection, there is no half-open connection in TLS.
 
 Constructs a Telsa object.
 
-- `opts` <Object> 
-  - `port` <number> server port
-  - `host` <string> server domain name, must be a Fully-Qualified Domain Name (FQDN)
-  - `ca` <string> root CA certificate in PEM format
-  - `cert` <string> client certificate in PEM format
-  - `key` <string> or <function>
-    - if `key` is a <string>, it is the client public key in PEM format
-    - if `key` is a <function>, it is a Signing function, see below.
-  - `[validityCheckDate]` <Date> or `null`, the server certificate chain will be verified against the given date, rather than the current system time, if provided. If the option is `null`, the validity period will NOT be checked during verification.
-  - `[socket]` <Object>, this option is used for testing only, for mocking a socket.
+- `opts` `<Object>`
+  - `port` `<number>` server port
+  - `host` `<string>` server domain name, must be a Fully-Qualified Domain Name (FQDN)
+  - `ca` `<string>` root CA certificate in PEM format
+  - `cert` `<string>` client certificate in PEM format
+  - `key` `<string>` or `<function>`
+    - if `key` is a `<string>`, it is the client public key in PEM format
+    - if `key` is a `<function>`, it is a Signing function, see below.
+  - `[validityCheckDate]` `<Date>` or `null`, the server certificate chain will be verified against the given date, rather than the current system time, if provided. If the option is `null`, the validity period will NOT be checked during verification.
+  - `[socket]` `<Object>`, this option is used for testing only, for mocking a socket.
 
 
 
-### Signing Function `(data, callback) => {}`
+## Signing Function `(data, callback) => {}`
 
 A signing function accepts a chunk of data and returns the signature in callback function.
 
-* data <Buffer> data to be signed
-* callback <function>, in the form of `(err, sig) => {}`, where:
-  * err <Error> error
-  * sig <Buffer> signature
+* data `<Buffer>` data to be signed
+* callback `<function>`, in the form of `(err, sig) => {}`, where:
+  * err `<Error>` error
+  * sig `<Buffer>` signature
 
