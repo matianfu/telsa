@@ -38,6 +38,6 @@
   },
   "dependencies": {
     "debug": "^4.1.1",
-    "node-forge": "^0.9.1"
+    "node-forge": "^1.3.0"
   }
 }
